@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <initializer_list>
 
 #if _WIN32 || _WIN64
    #if _WIN64
@@ -23,6 +24,8 @@
 #endif
 
 #define INITIAL_VECTOR_SIZE 0
+
+#define VECTOR_SIZE_ALLOCATOR(__l) (__l) * sizeof(T)
 
 namespace stl
 {
@@ -44,16 +47,16 @@ namespace stl
         typedef const T* const_iterator;
         typedef const T& const_reference;
 
-        explicit vector(size_t size = INITIAL_VECTOR_SIZE)
+        vector() noexcept : m_capacity(0), m_size(0), m_data(nullptr) { }
+
+        vector(std::initializer_list<T> init) : m_capacity(init.size()), m_size(init.size()), m_data(nullptr)
         {
-            this->m_capacity = size;
-
-            this->m_size = size;
-
-            this->m_data = (T *)malloc(size * sizeof(T));
+            this->m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
 
             if (this->m_data == nullptr)
-                throw "malloc: Couldn't allocate memory!\n";
+                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+
+            memcpy(m_data, init.begin(), VECTOR_SIZE_ALLOCATOR(m_size));
         }
 
         size_t size() const noexcept { return m_size; }
@@ -74,12 +77,12 @@ namespace stl
                 
             m_capacity = new_size + new_size / 2 + 1;
 
-            T *temp_ptr = (T *)malloc(m_capacity * sizeof(T));
+            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_capacity));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(temp_ptr, m_data, (m_size - 1) * sizeof(T));
+            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_size - 1));
 
             free(m_data);
 
@@ -93,12 +96,12 @@ namespace stl
 
             m_capacity = m_size;
 
-            T *temp_ptr = (T *)malloc(m_capacity * sizeof(T));
+            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_capacity));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(temp_ptr, m_data, m_capacity * sizeof(T));
+            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_capacity));
 
             free(m_data);
 
@@ -112,12 +115,12 @@ namespace stl
 
             m_capacity = size;
 
-            T *temp_ptr = (T *)malloc(m_capacity * sizeof(T));
+            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_capacity));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(temp_ptr, m_data, m_size * sizeof(T));
+            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_size));
 
             free(m_data);
 
@@ -148,9 +151,51 @@ namespace stl
 
         iterator data() noexcept { return m_data; }
 
-        void assign(size_t size, T value)
+        void assign(size_t size, const T value)
         {
-            
+            if (m_size > INITIAL_VECTOR_SIZE)
+                return;
+
+            m_size = m_capacity = size;
+
+            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+
+            if (m_data == nullptr)
+                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+
+            for (iterator it = begin(); it != end(); it++)
+                *it = value;
+        }
+
+        void assign(iterator first, iterator last)
+        {
+            if (first == nullptr || last == nullptr)
+                return;
+
+            ssize_t size = first - last;
+
+            if (size < 0) size = -size;
+
+            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(size));
+
+            if (m_data == nullptr)
+                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+
+            memcpy(m_data, first, VECTOR_SIZE_ALLOCATOR(size));
+
+            m_size = m_capacity = size;
+        }
+
+        void assign(std::initializer_list<T> init)
+        { 
+            m_size = m_capacity = init.size();
+
+            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+
+            if (m_data == nullptr)
+                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+
+            memcpy(m_data, init.begin(), VECTOR_SIZE_ALLOCATOR(m_size));
         }
 
         iterator begin() noexcept              { return m_data; }

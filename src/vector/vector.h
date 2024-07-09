@@ -31,6 +31,10 @@
 
 namespace stl
 {
+    /**
+     *  @brief Simple vector container. Automatic resizing with all the functionalies necessary
+     */
+
     template <typename T> class vector
     {
     public:

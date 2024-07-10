@@ -49,9 +49,9 @@ namespace stl
 
         typedef vector& vector_reference;
 
+    private:
         typedef size_t  size_type;
 
-    private:
         constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
 
         void set_m_data(iterator payload) noexcept { this->m_data = payload; }

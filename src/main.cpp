@@ -1,6 +1,8 @@
 #include <iostream>
 
-#include "list/forward_list.h"
+#include "forward_list.h"
+
+#include "array.h"
 
 int main()
 {
@@ -14,6 +16,10 @@ int main()
 
     for (stl::forward_list<int>::iterator it = t.begin(); it != t.end(); it++)
         std::cout << *it << std::endl;
+
+    stl::array<int, 5> test;
+
+    test.at(19);
 
     return EXIT_SUCCESS;
 }

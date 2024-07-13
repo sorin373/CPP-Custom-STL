@@ -1,5 +1,5 @@
 #ifndef __VECTOR_H__
-#define __VECTOR_H__
+#define __VECTOR_H__ 1
 
 #include "../memory/memory.h" // memcpy and typedef
 

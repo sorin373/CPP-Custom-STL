@@ -1,7 +1,7 @@
 #ifndef __ARRAY_H__
 #define __ARRAY_H__ 1
 
-#include "memory/memory.h"
+#include "../memory/memory.h"
 
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
 
@@ -74,7 +74,7 @@ namespace stl
 
         iterator begin() noexcept { return m_data; }
 
-        iterator end() noexcept { return m_data + array_size; } // still confused if end should point to the last element or the last address in the array.
+        iterator end() noexcept { return m_data + array_size; } // still confuses if end should point to the last element or the last address in the array.
                                                                 // Brings me to question the size() and max_size() functions in the std::array stl lib which both seem to return the array_size
                                                                 // which effectively means the full capacity of the array. Having said that, I do believe that the user should count the ammount of elements 
                                                                 // added to the array since automatic resizing for this stl is out of the question and only one memeber function should return the max_size

@@ -1,5 +1,5 @@
 #ifndef MEMORY_H
-#define MEMORY_H
+#define MEMORY_H 1
 
 typedef unsigned int        size_t;
 typedef unsigned char       uint8_t;

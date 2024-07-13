@@ -268,7 +268,7 @@ namespace stl
 
         void swap(vector &payload) noexcept
         {
-            iterator temp_m_data      = this->m_data;
+            iterator  temp_m_data     = this->m_data;
             size_type temp_m_size     = this->m_size;
             size_type temp_m_capacity = this->m_capacity;
 

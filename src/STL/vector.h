@@ -2,6 +2,7 @@
 #define __VECTOR_H__ 1
 
 #include "../memory/memory.h" // memcpy and typedef
+#include "reverse_iterator.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -37,29 +38,28 @@ namespace stl
 
     template <typename T> class vector
     {
-    public:
-        /**
-         *  @brief iterators declaration
-         */
-        typedef T* iterator;
-        typedef T& reference;
+        typedef size_t  size_type;
+        typedef T       value_type;
 
-        typedef const T* const_iterator;
-        typedef const T& const_reference;
+        typedef reverse_iterator<value_type>       reverse_iterator;
+        typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
         typedef vector& vector_reference;
-
-    private:
-        typedef size_t  size_type;
 
         constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
 
         void set_m_data(iterator payload) noexcept { this->m_data = payload; }
 
     public:
+        typedef T* iterator;
+        typedef T& reference;
+
+        typedef const T* const_iterator;
+        typedef const T& const_reference;
+
         vector() noexcept : m_capacity(0), m_size(0), m_data(nullptr) { }
 
-        vector(std::initializer_list<T> init) : m_capacity(init.size()), m_size(init.size()), m_data(nullptr)
+        vector(std::initializer_list<value_type> init) : m_capacity(init.size()), m_size(init.size()), m_data(nullptr)
         {
             this->m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
 
@@ -71,7 +71,7 @@ namespace stl
 
         size_type size() const noexcept { return m_size; }
 
-        uint64_t max_size() { return pow(2, ENV) / sizeof(T) - 1; }           // (2 ^ nativePointerBitWidth) / sizeof(dataType) - 1
+        uint64_t max_size() { return pow(2, ENV) / sizeof(value_type) - 1; }  // (2 ^ nativePointerBitWidth) / sizeof(dataType) - 1
 
         size_type capcacity() const noexcept { return m_capacity; }
 
@@ -137,7 +137,7 @@ namespace stl
             m_data = temp_ptr;
         }
 
-        void push_back(T element)
+        void push_back(value_type element)
         {
             m_size++;
 
@@ -157,11 +157,9 @@ namespace stl
             }
         }
 
-        void insert(const_iterator position, T value)
+        void insert(const_iterator position, value_type value)
         {
-            int index = position - this->begin();
-
-            if (index < 0) index = -index;
+            int index = get_index(position, this->begin());
 
             if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
 
@@ -176,7 +174,7 @@ namespace stl
             m_data[index] = value;
         }
 
-        void insert(const_iterator position, size_type size, T value)
+        void insert(const_iterator position, size_type size, value_type value)
         {
             size_type index = get_index(position, this->begin());
 
@@ -296,7 +294,7 @@ namespace stl
             for (int i = old_size - 1; i >= index; i--)
                 m_data[i + 1] = m_data[i];
 
-            new (&m_data[index]) T(std::forward<Args>(args)...); // new (ptr) T(args) - placement new. It constructs an object of type T at the address ptr without allocating new memory
+            new (&m_data[index]) value_type(std::forward<Args>(args)...); // new (ptr) T(args) - placement new. It constructs an object of type T at the address ptr without allocating new memory
 
             return &m_data[index];
         }
@@ -308,12 +306,12 @@ namespace stl
             if (m_size > m_capacity)
                 resize(m_size);
 
-            new (&m_data[m_size - 1]) T(std::forward<Args>(args)...);
+            new (&m_data[m_size - 1]) value_type(std::forward<Args>(args)...);
 
             return &m_data[m_size - 1];
         }
 
-        iterator find(T value)
+        iterator find(value_type value)
         {
             for (iterator it = this->begin(); it != this->end(); it++)
                 if (*it == value)
@@ -335,14 +333,14 @@ namespace stl
 
         iterator data() noexcept   { return m_data; }
 
-        void assign(size_type size, const T value)
+        void assign(size_type size, const value_type value)
         {
             if (m_size > INITIAL_VECTOR_SIZE)
                 return;
 
             m_size = m_capacity = size;
 
-            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+            m_data = (value_type *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
 
             if (m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
@@ -360,7 +358,7 @@ namespace stl
 
             if (size < 0) size = -size;
 
-            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(size));
+            m_data = (value_type *)malloc(VECTOR_SIZE_ALLOCATOR(size));
 
             if (m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
@@ -370,7 +368,7 @@ namespace stl
             m_size = m_capacity = size;
         }
 
-        void assign(std::initializer_list<T> init)
+        void assign(std::initializer_list<value_type> init)
         { 
             m_size = m_capacity = init.size();
 
@@ -382,7 +380,7 @@ namespace stl
             memcpy(m_data, init.begin(), VECTOR_SIZE_ALLOCATOR(m_size));
         }
 
-        iterator begin() noexcept              { return m_data; }
+        iterator begin()                       { return m_data; }
 
         const_iterator cbegin() const noexcept { return m_data; }
 
@@ -390,77 +388,13 @@ namespace stl
 
         const_iterator cend() const noexcept   { return m_data + m_size; }
 
-        class reverse_iterator
-        {
-        private:
-            iterator m_ptr;
+        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size - 1); }
 
-        public:
-            reverse_iterator(iterator ptr) : m_ptr(ptr) { }
+        reverse_iterator rend()                { return reverse_iterator(m_data - 1); }
 
-            iterator operator->() { return m_ptr; }
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size - 1); }
 
-            reference operator*() const { return *m_ptr; }
-
-            reverse_iterator& operator++() // prefix
-            {
-                --m_ptr;
-                return *this;
-            }
-
-            reverse_iterator operator++(int) // postfix
-            {
-                reverse_iterator tmp = *this;
-
-                m_ptr--;
-
-                return tmp;
-            }
-
-            bool operator==(const reverse_iterator &other) const { return m_ptr == other.m_ptr; }
-
-            bool operator!=(const reverse_iterator &other) const { return m_ptr != other.m_ptr; }
-        };
-
-        class const_reverse_iterator
-        {
-        private:
-            const_iterator m_ptr;
-            
-        public:
-            const_reverse_iterator(const_iterator ptr) : m_ptr(ptr) { }
-
-            const_iterator operator->() const { return m_ptr; }
-
-            const_reference operator*() const { return *m_ptr; }
-
-            const_reverse_iterator& operator++()
-            {
-                --m_ptr;
-                return *this;
-            }
-
-            const_reverse_iterator operator++(int)
-            {
-                const_reverse_iterator tmp = *this;
-
-                m_ptr--;
-
-                return tmp;
-            }
-
-            bool operator==(const const_reverse_iterator &other) const { return m_ptr == other.m_ptr; }
-            
-            bool operator!=(const const_reverse_iterator &other) const { return m_ptr != other.m_ptr; }
-        };
-
-        reverse_iterator rbegin()        { return reverse_iterator(m_data + m_size - 1); }
-
-        reverse_iterator rend()          { return reverse_iterator(m_data - 1); }
-
-        const_reverse_iterator crbegin() { return const_reverse_iterator(m_data + m_size - 1); }
-
-        const_reverse_iterator crend()   { return const_reverse_iterator(m_data - 1); } 
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data - 1); } 
 
         reference operator[](size_type index) 
         { 
@@ -500,9 +434,9 @@ namespace stl
         ~vector() { free(m_data); }
 
     private:
-        T        *m_data;
-        size_type m_size;
-        size_type m_capacity;
+        value_type *m_data;
+        size_type   m_size;
+        size_type   m_capacity;
     };
 }
 

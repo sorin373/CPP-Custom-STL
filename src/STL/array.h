@@ -2,18 +2,26 @@
 #define __ARRAY_H__ 1
 
 #include "../memory/memory.h"
+#include "reverse_iterator.h"
 
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
+
+/**
+ * @bug fix m_size logic error
+ */
 
 namespace stl
 {
     template <typename T, size_t array_size> class array
     {
-        typedef T                 value_type;
+        typedef       T           value_type;
         typedef       value_type* pointer;
         typedef const value_type* const_pointer;
 
-        typedef size_t            size_type;
+        typedef reverse_iterator<value_type>       reverse_iterator;
+        typedef const_reverse_iterator<value_type> const_reverse_iterator;
+
+        typedef size_t size_type;
 
     public:
         typedef value_type* iterator;
@@ -81,6 +89,14 @@ namespace stl
                                                                 // (which is kind of stupid considering that the user acutally sets up that value...).
 
                                                                 // Might be a good idea to start with a capacity = array_size just like the vector stl and resize until the max_size reaches that capacity.
+        
+        reverse_iterator rbegin() { return m_data + array_size - 1; }
+
+        reverse_iterator rend()   { return m_data - 1; }
+
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + array_size - 1); }
+
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data - 1); }
 
         void fill(const value_type value) noexcept
         {

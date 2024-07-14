@@ -4,30 +4,12 @@
 #include "../memory/memory.h" // memcpy and typedef
 #include "reverse_iterator.h"
 
+#include <initializer_list>
 #include <stdlib.h>
 #include <math.h>
-#include <initializer_list>
-
-#if _WIN32 || _WIN64
-   #if _WIN64
-     #define ENV 64
-  #else
-    #define ENV 32
-  #endif
-#endif
-
-#if __GNUC__
-  #if __x86_64__ || __ppc64__
-    #define ENV 64
-  #else
-    #define ENV 32
-  #endif
-#endif
 
 #define INITIAL_VECTOR_SIZE 0
-
 #define VECTOR_SIZE_ALLOCATOR(__l) (__l) * sizeof(T)
-
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
 
 namespace stl

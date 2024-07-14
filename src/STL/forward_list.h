@@ -22,9 +22,9 @@ namespace stl
 
             Node() : m_data(nullptr), m_next(nullptr)    { }
 
-            Node(T data) : m_data(data), m_next(nullptr) { }
+            Node(value_type data) : m_data(data), m_next(nullptr) { }
 
-            T get_m_data() const noexcept           { return m_data; }
+            value_type get_m_data() const noexcept  { return m_data; }
 
             pointer get_m_data_p() const noexcept   { return &m_data; }
 

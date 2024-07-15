@@ -17,6 +17,8 @@
   #endif
 #endif
 
+#define DEBUG 0
+
 typedef unsigned int        size_t;
 typedef unsigned char       uint8_t;
 typedef unsigned long long  uint64_t;

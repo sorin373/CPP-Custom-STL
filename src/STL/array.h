@@ -6,31 +6,47 @@
 
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
 
-/**
- * @bug fix m_size logic error
- */
-
 namespace stl
 {
+    /**
+     * @brief This is a container that encapsulates fixed size arrays.
+     * 
+     * @param T          Type of element
+     * @param array_size The fixed no. of elements that the array can have
+     */
     template <typename T, size_t array_size> class array
     {
         typedef       T           value_type;
         typedef       value_type* pointer;
         typedef const value_type* const_pointer;
 
+        // Private aliases for the reverse iterators. The user will use the generic reverse_iterator template.
         typedef reverse_iterator<value_type>       reverse_iterator;
         typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
         typedef size_t size_type;
 
     public:
-        typedef value_type* iterator;
-        typedef value_type& reference;
-
+        /**
+         * @brief Define type aliases for the iterators types.
+         *        These iterators provide random access capabilities and can be used to traverse containers that store elements of value_type
+         * 
+         * @example 
+         * for (iterator it = array.begin(); it != array.end(); it++) {
+         *   Access each element using *it
+         * }
+         */
+        typedef value_type*     iterator;
         typedef const iterator  const_iterator;
+
+        /**
+         * @brief Define type aliases for the references types.
+         *        They provide a way to refer to elements within the container and can be used to access or modify the element.
+         */
+        typedef value_type&     reference;
         typedef const reference const_reference;
 
-        array() : m_data(nullptr), m_size(0)
+        array() : m_data(nullptr)
         {
             m_data = (value_type *)malloc(array_size * sizeof(value_type));
 
@@ -38,7 +54,7 @@ namespace stl
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
         }
 
-        array(std::initializer_list<value_type> init) : m_data(nullptr), m_size(0)
+        array(std::initializer_list<value_type> init) : m_data(nullptr)
         {
             if (init.size() > array_size)
                 throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
@@ -49,64 +65,69 @@ namespace stl
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
             memcpy(m_data, init.begin(), array_size * sizeof(value_type));               // this does not set the rest of the elements to 0 (std::array does set the rest to 0)
-
-            m_size = init.size();
         }
 
         constexpr size_type max_size() const noexcept { return array_size; }
 
-        size_type size() const noexcept               { return this->m_size; }
+        pointer data() noexcept { return this->m_data; }        
 
-        pointer data() noexcept                       { return this->m_data; }
-
-        const_pointer data() const noexcept           { return this->m_data; }
-
-        value_type at(size_type index) 
+        /**
+         * @brief Returns a reference to an element within the container
+         * @param index The location of the element
+         */
+        reference at(size_type index) 
         { 
             if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
 
             return m_data[index]; 
         }
 
-        reference front() noexcept
+        /**
+         * @brief Returns a constant reference to an element within the container
+         * @param index The location of the element
+         */
+        const_reference at(size_type index) const
+        {
+            if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
+
+            return m_data[index];
+        }
+
+        reference front()
         {
             if (array_size > 0)
                 return m_data[0];
         }
 
-        reference back() noexcept
+        reference back()
         {
             if (array_size > 0)
-                return m_data[m_size - 1];
+                return m_data[array_size - 1];
         }
 
-        iterator begin() noexcept { return m_data; }
-
-        iterator end() noexcept { return m_data + array_size; } // still confuses if end should point to the last element or the last address in the array.
-                                                                // Brings me to question the size() and max_size() functions in the std::array stl lib which both seem to return the array_size
-                                                                // which effectively means the full capacity of the array. Having said that, I do believe that the user should count the ammount of elements 
-                                                                // added to the array since automatic resizing for this stl is out of the question and only one memeber function should return the max_size
-                                                                // (which is kind of stupid considering that the user acutally sets up that value...).
-
-                                                                // Might be a good idea to start with a capacity = array_size just like the vector stl and resize until the max_size reaches that capacity.
+        iterator begin() { return this->m_data; }
         
-        reverse_iterator rbegin() { return m_data + array_size - 1; }
+        iterator end()   { return this->m_data + array_size; }
 
-        reverse_iterator rend()   { return m_data - 1; }
+        const_iterator cbegin() const noexcept { return this->m_data; }
 
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + array_size - 1); }
+        const_iterator cend() const noexcept   { return this->m_data + array_size; }
+        
+        reverse_iterator rbegin() { return reverse_iterator(this->m_data + array_size); }
 
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data - 1); }
+        reverse_iterator rend()   { return reverse_iterator(this->m_data); }
 
-        void fill(const value_type value) noexcept
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + array_size); }
+
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); }
+
+        void fill(const value_type value)
         {
             for (size_type i = 0; i < array_size; i++)
                 m_data[i] = value;
-
-            m_size = array_size;
         }
 
-        void swap(array &arr) // array size is the same hopefully
+        void swap(array &arr)
         {
             iterator temp_m_data = this->m_data;
 
@@ -115,6 +136,10 @@ namespace stl
             arr.m_data = temp_m_data;
         }
 
+        /**
+         * @brief Returns a reference to the element at specified location index;
+         * @param index The location of the element
+         */
         reference operator[](size_type index)
         {
             if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
@@ -122,6 +147,10 @@ namespace stl
             return m_data[index];
         }
 
+        /**
+         * @brief Returns a constant reference to the element at specified location index;
+         * @param index The location of the element
+         */
         const_reference operator[](size_type index) const
         {
             if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
@@ -175,9 +204,28 @@ namespace stl
 
     private:
         value_type *m_data;
-        size_type   m_size; // contains the real array size != max_size (problem: can not be calculated unless the constructor with the initializer list is used)
-                            // the std::array does not have this member variable
     };
+
+    /**
+     * @brief Extracts Ith  element from the array
+     *        I must be an integer value in range [​0​, N). This is enforced at compile time as opposed to at() or operator[].
+     * @param I   The index of the element
+     * @param arr The array from which the contents are extracted 
+     */
+    template <size_t I, typename T, size_t array_size> 
+    constexpr T& get(array<T, array_size> &arr)
+    {
+        if (I >= array_size) OUT_OF_BOUNDS_EXCEPTION
+
+        return arr[I];
+    }
+
+    /**
+     * @brief Swaps the contents of lhs and rhs by calling the swap member function.
+     * @param lhs, rhs containers whose contents to swap
+     */
+    template <typename T, size_t array_size>
+    inline void swap(array<T, array_size> &lhs, array<T, array_size> &rhs) { lhs.swap(rhs); }
 }
 
 #endif

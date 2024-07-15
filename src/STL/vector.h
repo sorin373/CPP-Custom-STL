@@ -17,7 +17,6 @@ namespace stl
     /**
      *  @brief Simple vector container. Automatic resizing with all the functionalies necessary
      */
-
     template <typename T> class vector
     {
         typedef size_t  size_type;
@@ -27,10 +26,6 @@ namespace stl
         typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
         typedef vector& vector_reference;
-
-        constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
-
-        void set_m_data(iterator payload) noexcept { this->m_data = payload; }
 
     public:
         typedef T* iterator;
@@ -370,13 +365,13 @@ namespace stl
 
         const_iterator cend() const noexcept   { return m_data + m_size; }
 
-        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size - 1); }
+        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size); }
 
-        reverse_iterator rend()                { return reverse_iterator(m_data - 1); }
+        reverse_iterator rend()                { return reverse_iterator(m_data); }
 
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size - 1); }
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size); }
 
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data - 1); } 
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); } 
 
         reference operator[](size_type index) 
         { 
@@ -419,6 +414,8 @@ namespace stl
         value_type *m_data;
         size_type   m_size;
         size_type   m_capacity;
+
+        constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
     };
 }
 

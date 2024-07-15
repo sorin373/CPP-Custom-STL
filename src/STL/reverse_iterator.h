@@ -1,19 +1,31 @@
 #ifndef __REVERSE_ITERATOR_H__
 #define __REVERSE_ITERATOR_H__ 1
 
+/**
+ * @file reverse_iterators.h
+ * @brief This header file contains the generic templates for reverse iterators.  
+ */
+
 namespace stl
 {
+    /**
+     * @brief This is a template for reverse iterators. It helps to go through a block of memory in reverse without changing the order of the elements.
+     * @example for (reverse_iterator<int> it = test.rbegin(); it != test.rend(); it++)
+     * @param T Type of element
+     */
     template <typename T> class reverse_iterator
     {
         typedef T*  iterator;
         typedef T&  reference;
 
     public:
-        reverse_iterator(iterator curr) : current(curr) { }
+        reverse_iterator() = default;
 
-        iterator operator->() { return current; }
+        constexpr explicit reverse_iterator(iterator curr) : current(curr) { }
 
-        reference operator*() { return *current; }
+        constexpr iterator operator->() { return current - 1; }
+
+        constexpr reference operator*() { return *(current - 1); }
 
         reverse_iterator& operator++()
         {
@@ -38,17 +50,25 @@ namespace stl
         iterator current;
     };
 
+    /**
+     * @brief This is a template for constant reverse iterators. 
+     *        It helps to go through a block of memory in reverse without modifying the elements or changing their order.
+     * @example for (const_reverse_iterator<int> it = test.crbegin(); it != test.crend(); it++)
+     * @param T Type of element
+     */
     template <typename T> class const_reverse_iterator
     {
         typedef const T*  const_iterator;
         typedef const T&  const_reference;
 
     public:
-        const_reverse_iterator(const_iterator curr) : current(curr) { }   
+        const_reverse_iterator() = default;
 
-        const_iterator operator->() const { return current; }
+        constexpr explicit const_reverse_iterator(const_iterator curr) : current(curr) { }   
 
-        const_reference operator*() const { return *current; }
+        constexpr const_iterator operator->() const { return current - 1; }
+
+        constexpr const_reference operator*() const { return *(current - 1); }
 
         const_reverse_iterator& operator++()
         {
@@ -74,4 +94,4 @@ namespace stl
     };
 }
 
-#endif
+#endif // REVERSE_ITERATOR_H

@@ -4,15 +4,17 @@
 #include "../memory/memory.h"
 
 #include <initializer_list>
+#include <bits/allocator.h>
 
 namespace stl
 {
-    template <typename T> class forward_list
+    template <typename T, typename Allocator = std::allocator<T>> class forward_list
     {
         typedef size_t            size_type;
         typedef T                 value_type;
         typedef const value_type* pointer;
         typedef const value_type& reference;
+        typedef Allocator         allocator_type;
 
     public:
         class Node
@@ -110,16 +112,35 @@ namespace stl
             pointer operator->() const noexcept  { return this->m_ptr->get_m_data(); }
         };
 
-    public:
         forward_list() noexcept : m_head(nullptr) { }
 
-        iterator begin() const noexcept        { return m_head; }
+        forward_list(size_type count, value_type value) : m_head(nullptr)
+        {
+            while (count != 0)
+            {
+                push_front(value);
+                count--;
+            }
+        }
 
-        const_iterator cbegin() const noexcept { return m_head; }
+        forward_list(std::initializer_list<value_type> init) : m_head(nullptr)
+        {
+            if (init.size() <= 0)
+                return;
+
+            for(pointer p = init.begin(); p != init.end(); p++)
+                push_front(*p);
+        }
+
+        iterator begin() const noexcept        { return this->m_head; }
+
+        const_iterator cbegin() const noexcept { return this->m_head; }
 
         iterator end() const noexcept          { return nullptr; }
 
-        T front() const noexcept               { return m_head->get_m_data(); }
+        const_iterator cend() const noexcept   { return nullptr; }
+
+        value_type front() const noexcept      { return this->m_head->get_m_data(); }
 
         void push_front(T value)
         {
@@ -171,6 +192,42 @@ namespace stl
 
             for (pointer p = init.begin(); p != init.end(); p++)
                 push_front(*p);
+        }
+
+        forward_list& operator=(const forward_list<value_type> list)                    // to fix
+        {
+            for (const_iterator it = list.cbegin(); it != list.cend(); it++)
+                push_front(*it);
+        }
+
+#if (DEBUG)
+        void print_list() const noexcept
+        {
+            node_iterator it = this->m_head;
+
+            while (it != nullptr)
+            {
+                std::cout << it->get_m_data() << " ";
+
+                it = it->m_next;
+            }
+
+            std::cout << std::endl;
+        }
+#endif
+
+        ~forward_list()
+        {
+            node_iterator ptr = this->m_head;
+
+            while (ptr != nullptr)
+            {
+                node_iterator temp = ptr;
+
+                ptr = ptr->m_next;
+
+                free(temp);
+            }
         }
 
     private:

@@ -1,7 +1,36 @@
-#ifndef __VECTOR_H__
-#define __VECTOR_H__ 1
+/**
+ * @copyright MIT License
 
-#include "../memory/memory.h" // memcpy and typedef
+    Copyright (c) 2024 Sorin Tudose
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    @file vector.h
+
+    @brief This is part of the standard template libraries (STL) and is used to implement resizeable arrays
+           and commonly used algorithms.
+ */
+
+#ifndef __VECTOR_H__
+#define __VECTOR_H__
+
+#include "../memory/memory.h"
 #include "reverse_iterator.h"
 
 #include <initializer_list>
@@ -9,51 +38,88 @@
 #include <math.h>
 
 #define INITIAL_VECTOR_SIZE 0
-#define VECTOR_SIZE_ALLOCATOR(__l) (__l) * sizeof(T)
-#define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
+#define VECTOR_BYTE_SIZE(__l) (__l) * sizeof(T)                                    // Calculates the memory size needed to allocate for a vector of a certain length __l
+#define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n"); // Exception macro
 
 namespace stl
 {
     /**
-     *  @brief Simple vector container. Automatic resizing with all the functionalies necessary
+     *  @brief Vector (STL) container. It adds extra functionalites to the basic CPP arrays, by resizing the memory when necessary.
+     *         In addition it consists in many member functions that help the user manage the array data faster and more efficiently.
+     *  @param T Type of data 
      */
     template <typename T> class vector
     {
         typedef size_t  size_type;
         typedef T       value_type;
 
+        // Private aliases for the reverse iterators. The user will use the generic reverse_iterator template.
         typedef reverse_iterator<value_type>       reverse_iterator;
         typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
         typedef vector& vector_reference;
 
     public:
+        /**
+         * @brief Define type aliases for the iterators types.
+         *        These iterators provide random access capabilities and can be used to traverse containers that store elements of value_type
+         * 
+         * @example 
+         * for (iterator it = vector.begin(); it != vector.end(); it++) {
+         *   Access each element using *it
+         * }
+         */
         typedef T* iterator;
         typedef T& reference;
 
+        /**
+         * @brief Define type aliases for the references types.
+         *        They provide a way to refer to elements within the container and can be used to access or modify the element.
+         */
         typedef const T* const_iterator;
         typedef const T& const_reference;
 
         vector() noexcept : m_capacity(0), m_size(0), m_data(nullptr) { }
 
+        /**
+         * @throw If the new memory block can not be allocated, a runtime error will be thrown.
+         */
         vector(std::initializer_list<value_type> init) : m_capacity(init.size()), m_size(init.size()), m_data(nullptr)
         {
-            this->m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+            this->m_data = (T *)malloc(VECTOR_BYTE_SIZE(m_size));
 
             if (this->m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(m_data, init.begin(), VECTOR_SIZE_ALLOCATOR(m_size));
+            memcpy(m_data, init.begin(), VECTOR_BYTE_SIZE(m_size));
         }
 
+        /**
+         * @returns The number of elements currently present in the vector.
+         */
         size_type size() const noexcept { return m_size; }
 
-        uint64_t max_size() { return pow(2, ENV) / sizeof(value_type) - 1; }  // (2 ^ nativePointerBitWidth) / sizeof(dataType) - 1
-
+        /**
+         * @brief (2 ^ nativePointerBitWidth) / sizeof(dataType) - 1
+         * @returns The theoretical maximum number of items that could be put in the vector.
+         */
+        constexpr uint64_t max_size() { return pow(2, ENV) / sizeof(value_type) - 1; }
+        
         size_type capcacity() const noexcept { return m_capacity; }
 
-        bool empty() const noexcept { return m_size == INITIAL_VECTOR_SIZE; } // 1 if empty, 0 if not
+        /**
+         * @returns Returns true if the vector has no elements.
+         */
+        bool empty() const noexcept { return m_size == INITIAL_VECTOR_SIZE; }
 
+        /**
+         * @brief This function resizes the container. While the m_size increses by 1 the m_capacity is calculated 
+         *        to be >= to m_size so that the container is resized efficently. The formula I came up with is:
+         *        m_capacity = new_size + new_size / 2 + 1. It is designed to grow as the new_size gets bigger and bigger,
+         *        balancing the need to minimize the number of resizes and the memory overhead.
+         * @param new_size The new size to which the vector will be resized to
+         * @throw If the new memory block can not be allocated, a runtime error will be thrown.
+         */
         void resize(size_type new_size)
         {
             if (new_size < m_size)
@@ -64,50 +130,60 @@ namespace stl
                 
             m_capacity = new_size + new_size / 2 + 1;
 
-            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_capacity));
+            T *temp_ptr = (T *)malloc(VECTOR_BYTE_SIZE(m_capacity));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_size - 1));
+            memcpy(temp_ptr, m_data, VECTOR_BYTE_SIZE(m_size - 1));
 
             free(m_data);
 
             m_data = temp_ptr;
         }
 
+        /**
+         * @brief This function frees any memory which is not used by the vector. In other words, the m_capacity will equal to m_size.
+         * @attention The function will return if the m_capacity is already equal to m_size.
+         * @throw If the new memory block can not be allocated, a runtime error will be thrown.
+         */
         void shrink_to_fit()
         {
             if (m_capacity == m_size)
                 return;
 
-            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+            T *temp_ptr = (T *)malloc(VECTOR_BYTE_SIZE(m_size));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
             m_capacity = m_size;
 
-            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_capacity));
+            memcpy(temp_ptr, m_data, VECTOR_BYTE_SIZE(m_capacity));
 
             free(m_data);
 
             m_data = temp_ptr;
         }
 
+        /**
+         * @brief This function reserves a chunk of memory for the vector container.
+         * @param size The new size to which the vector will be resized to
+         * @throw If the new memory block can not be allocated, a runtime error will be thrown.
+         */
         void reserve(size_type size)
         {
             if (size <= m_capacity)
                 return;
 
-            T *temp_ptr = (T *)malloc(VECTOR_SIZE_ALLOCATOR(size));
+            T *temp_ptr = (T *)malloc(VECTOR_BYTE_SIZE(size));
 
             if (temp_ptr == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
             m_capacity = size;
 
-            memcpy(temp_ptr, m_data, VECTOR_SIZE_ALLOCATOR(m_size));
+            memcpy(temp_ptr, m_data, VECTOR_BYTE_SIZE(m_size));
 
             free(m_data);
 
@@ -188,8 +264,6 @@ namespace stl
 
             for (size_type i = old_size - 1; i >= index; i--)
                 m_data[i + additional_size] = m_data[i];
-
-            size_type count = 0;
 
             for (size_type i = index; i <= index + additional_size - 1; i++)
                 m_data[i] = *it_1++;
@@ -317,7 +391,7 @@ namespace stl
 
             m_size = m_capacity = size;
 
-            m_data = (value_type *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+            m_data = (value_type *)malloc(VECTOR_BYTE_SIZE(m_size));
 
             if (m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
@@ -335,12 +409,12 @@ namespace stl
 
             if (size < 0) size = -size;
 
-            m_data = (value_type *)malloc(VECTOR_SIZE_ALLOCATOR(size));
+            m_data = (value_type *)malloc(VECTOR_BYTE_SIZE(size));
 
             if (m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(m_data, first, VECTOR_SIZE_ALLOCATOR(size));
+            memcpy(m_data, first, VECTOR_BYTE_SIZE(size));
 
             m_size = m_capacity = size;
         }
@@ -349,12 +423,12 @@ namespace stl
         { 
             m_size = m_capacity = init.size();
 
-            m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+            m_data = (T *)malloc(VECTOR_BYTE_SIZE(m_size));
 
             if (m_data == nullptr)
                 throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-            memcpy(m_data, init.begin(), VECTOR_SIZE_ALLOCATOR(m_size));
+            memcpy(m_data, init.begin(), VECTOR_BYTE_SIZE(m_size));
         }
 
         iterator begin()                       { return m_data; }
@@ -397,12 +471,12 @@ namespace stl
                 m_capacity = other.capcacity();
                 m_size     = other.size();
 
-                m_data = (T *)malloc(VECTOR_SIZE_ALLOCATOR(m_size));
+                m_data = (T *)malloc(VECTOR_BYTE_SIZE(m_size));
 
                 if (m_data == nullptr)
                     throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-                memcpy(this->m_data, other.cbegin(), VECTOR_SIZE_ALLOCATOR(m_size));
+                memcpy(this->m_data, other.cbegin(), VECTOR_BYTE_SIZE(m_size));
             }
 
             return *this;

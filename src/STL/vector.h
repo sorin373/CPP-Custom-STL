@@ -34,11 +34,11 @@
 #include "reverse_iterator.h"
 
 #include <initializer_list>
-#include <stdlib.h>
+#include <malloc.h>
+#include <stdexcept>
 #include <math.h>
 
 #define INITIAL_VECTOR_SIZE 0
-#define VECTOR_BYTE_SIZE(__l) (__l) * sizeof(T)                                    // Calculates the memory size needed to allocate for a vector of a certain length __l
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n"); // Exception macro
 
 namespace stl
@@ -50,6 +50,8 @@ namespace stl
      */
     template <typename T> class vector
     {
+        #define VECTOR_BYTE_SIZE(__l) (__l) * sizeof(T) // Calculates the memory size needed to allocate for a vector of a certain length __l
+
         typedef size_t  size_type;
         typedef T       value_type;
 
@@ -271,9 +273,13 @@ namespace stl
 
         void clear() noexcept
         { 
-            for (size_type i = 0, n = this->size(); i < n; i++) m_data[i].~T();
+            if (this->m_size <= 0)
+                return;
 
-            if (m_size > 0) m_size = INITIAL_VECTOR_SIZE;
+            for (size_type i = 0, n = this->size(); i < n; i++) 
+                m_data[i].~T();
+
+            m_size = INITIAL_VECTOR_SIZE;
         }
 
         void erase(iterator position)

@@ -8,15 +8,25 @@
 
 #define MALLOC_RUNTIME_ERROR throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
-// to do 
-// -- reverse iterators
+/**
+ * @todo
+ * -> empty()
+ * -> at()
+ * -> emplace()
+ * -> find()
+ * -> count()
+ * -> erase()
+ * -> clear()
+ * -> operator[]
+ * -> swap()
+ */
 
 namespace stl
 {
     template <typename K, typename V> class node
     {
-        typedef V            value_type;
-        typedef K            key_type;
+        typedef V   value_type;
+        typedef K   key_type;
 
     public:
         node(const key_type key, const value_type value)
@@ -49,9 +59,9 @@ namespace stl
 
     template <typename K, typename V, typename F = key_hash<K>> class hash_table
     {
-        typedef F            hash_function;
-        typedef V            value_type;
-        typedef K            key_type;
+        typedef F   hash_function;
+        typedef V   value_type;
+        typedef K   key_type;
 
         typedef unsigned int size_type;
 
@@ -62,12 +72,11 @@ namespace stl
         #define LOAD_FACTOR      0.75
 
     public:
-
         typedef       node<key_type, value_type>**       iterator;
         typedef const node<key_type, value_type>** const_iterator;
 
-        // typedef stl::reverse_iterator<node<key_type, value_type>**>       reverse_iterator;
-        // typedef stl::const_reverse_iterator<node<key_type, value_type>**> const_reverse_iterator;
+        typedef stl::reverse_iterator<node<key_type, value_type>*>       reverse_iterator;
+        typedef stl::const_reverse_iterator<node<key_type, value_type>*> const_reverse_iterator;
 
         hash_table(const size_type capacity = INITIAL_CAPACITY) 
             : m_table(nullptr), m_size(0), m_capacity(capacity)
@@ -83,6 +92,9 @@ namespace stl
         void resize(size_type new_size)
         {
             node<key_type, value_type> **temp_table = (node<key_type, value_type>**)malloc(new_size * sizeof(node<key_type, value_type>*));
+
+            for (size_type i = 0; i < new_size; i++)
+                m_table[i] = 0;
 
             if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
 
@@ -125,8 +137,10 @@ namespace stl
             return false;
         }
 
-        void put(const key_type key, const value_type value)
+        void insert(const key_type key, const value_type value)
         {
+            // check the load factor to see if the hash table needs resizing. (to do: not sure this is the right approach) 
+            // LOAD_FACTOR = 75% (predefined)
             if ((double)(m_size) / m_capacity > LOAD_FACTOR)
             {
                 m_capacity *= 2;
@@ -135,27 +149,36 @@ namespace stl
 
             size_t hash_value = m_hash_func(key, m_capacity);
 
-            node<key_type, value_type> *prev  = nullptr;
-            node<key_type, value_type> *entry = m_table[hash_value];
+            node<key_type, value_type> *prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
+            node<key_type, value_type> *entry = m_table[hash_value]; // select the entry point for the forward list
 
+            // transverse the forward list to the end while looking for the key
             while (entry != nullptr && entry->get_key() != key)
             {
                 prev = entry;
                 entry = entry->get_next();
             }
-
+            
+            // if the entry is null that means the end of the list was reached and the key was not found
             if (entry == nullptr)
             {
+                // create a new node for the new element
                 entry = new node<key_type, value_type>(key, value);
                 
+                // if there prev is null that means the entry was null from the begining and there
+                // is not a list currently at that specific hash value. Therefore that bucket is assigned the address of the entry
                 if (prev == nullptr)
                     m_table[hash_value] = entry;
                 else
+                    // if prev != null that means that there is a list at the hash value and the entry is added at the back of this list
                     prev->set_next(entry);
 
+                // m_size gets incremented for each entry
                 m_size++;
             }
             else
+                // if entry is not null that means the prev while was terminated when the same key was found.
+                // Therefore the value is just updated for this specific key
                 entry->set_value(value);
         }
 
@@ -173,13 +196,13 @@ namespace stl
 
         const_iterator cend() const noexcept   { return m_table + m_capacity; }
 
-        // reverse_iterator rbegin() { return reverse_iterator(m_table + m_capacity); }
+        reverse_iterator rbegin() { return reverse_iterator(m_table + m_capacity); }
 
-        // reverse_iterator rend()   { return reverse_iterator(m_table); }
+        reverse_iterator rend()   { return reverse_iterator(m_table); }
 
-        // const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_table + m_capacity); }
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_table + m_capacity); }
 
-        // const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_table); }
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_table); }
 
         ~hash_table() 
         {

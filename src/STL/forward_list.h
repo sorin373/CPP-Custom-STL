@@ -8,13 +8,12 @@
 
 namespace stl
 {
-    template <typename T, typename Allocator = std::allocator<T>> class forward_list
+    template <typename T> class forward_list
     {
         typedef size_t            size_type;
         typedef T                 value_type;
         typedef const value_type* pointer;
         typedef const value_type& reference;
-        typedef Allocator         allocator_type;
 
     public:
         class Node

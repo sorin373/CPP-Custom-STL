@@ -23,7 +23,7 @@
 
     @file vector.h
 
-    @brief This is part of the standard template libraries (STL) and is used to implement resizeable arrays
+    @brief This is part of the standard template libraries (STL) and it is used to implement resizeable arrays
            and commonly used algorithms.
  */
 
@@ -488,7 +488,13 @@ namespace stl
             return *this;
         }
 
-        ~vector() { free(m_data); }
+        ~vector() 
+        {
+            for (size_type i = 0; i < m_size; i++)
+                m_data[i].~T();
+
+            free(m_data); 
+        }
 
     private:
         value_type *m_data;

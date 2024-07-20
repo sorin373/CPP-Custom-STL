@@ -1,3 +1,31 @@
+/**
+ * @copyright MIT License
+
+    Copyright (c) 2024 Sorin Tudose
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    @file vector.h
+
+    @brief This is part of the standard template libraries (STL) and it is used to implement a hash table.
+ */
+
 #ifndef __HASH_TABLE__
 #define __HASH_TABLE__
 
@@ -10,8 +38,6 @@
 
 /**
  * @todo
- * -> empty()
- * -> at()
  * -> emplace()
  * -> find()
  * -> count()
@@ -25,8 +51,11 @@ namespace stl
 {
     template <typename K, typename V> class node
     {
-        typedef V   value_type;
-        typedef K   key_type;
+        typedef V     value_type;
+        typedef K     key_type;
+        typedef node* pointer;
+
+        typedef V& reference;
 
     public:
         node(const key_type key, const value_type value)
@@ -36,18 +65,27 @@ namespace stl
 
         value_type get_value() const noexcept     { return m_value; }
 
-        node* get_next() const noexcept           { return m_next; }
+        reference get_value() noexcept            { return m_value; }
+
+        pointer get_next() const noexcept         { return m_next; }
 
         void set_value(value_type value) noexcept { m_value = value; }
 
-        void set_next(node *next) noexcept        { m_next = next; }
+        void set_next(pointer next) noexcept      { m_next = next; }
 
     private:
         key_type     m_key;
         value_type   m_value;
-        node*        m_next;
+        pointer      m_next;
     };
 
+    /**
+     * @brief Default hashing function. The user can override this but the function header needs to be kept.
+     * @param K          Key type
+     * @param key        key
+     * @param table_size The size of the hash table
+     * @returns The hash value of an element.
+     */
     template <typename K> class key_hash
     {
     public:
@@ -57,26 +95,37 @@ namespace stl
         }
     };
 
+    /**
+     * @brief This container represents a generic implementation of the hash table data structure.
+     *        It consists in many member functions that help the user manage the hash table data faster and more efficiently.
+     *        Moreover, it has automatic resizing when the load factor exceeds 75%.
+     * @param K Key type
+     * @param V Value type
+     * @param F Hash function
+     */
     template <typename K, typename V, typename F = key_hash<K>> class hash_table
     {
-        typedef F   hash_function;
+        typedef F   hash_function_type;
         typedef V   value_type;
         typedef K   key_type;
 
         typedef unsigned int size_type;
 
-        typedef       V& value_reference;
-        typedef const V& const_value_reference;
+        typedef       value_type&       value_reference;
+        typedef const value_type& const_value_reference;
 
-        #define INITIAL_CAPACITY 16
-        #define LOAD_FACTOR      0.75
+        typedef       node<key_type, value_type>*       pointer;
+        typedef const node<key_type, value_type>* const_pointer;
+
+        #define INITIAL_CAPACITY 16U
+        #define LOAD_FACTOR 0.75
 
     public:
-        typedef       node<key_type, value_type>**       iterator;
-        typedef const node<key_type, value_type>** const_iterator;
+        typedef       node<key_type, value_type>**       bucket_iterator;
+        typedef const node<key_type, value_type>** const_bucket_iterator;
 
-        typedef stl::reverse_iterator<node<key_type, value_type>*>       reverse_iterator;
-        typedef stl::const_reverse_iterator<node<key_type, value_type>*> const_reverse_iterator;
+        typedef stl::reverse_iterator<node<key_type, value_type>*>             bucket_reverse_iterator;
+        typedef stl::const_reverse_iterator<node<key_type, value_type>*> const_bucket_reverse_iterator;
 
         hash_table(const size_type capacity = INITIAL_CAPACITY) 
             : m_table(nullptr), m_size(0), m_capacity(capacity)
@@ -93,18 +142,18 @@ namespace stl
         {
             node<key_type, value_type> **temp_table = (node<key_type, value_type>**)malloc(new_size * sizeof(node<key_type, value_type>*));
 
+            if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
+
             for (size_type i = 0; i < new_size; i++)
                 m_table[i] = 0;
 
-            if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
-
             for (size_type i = 0; i < m_size; i++)
             {
-                node<key_type, value_type> *entry = m_table[i];
+                pointer entry = m_table[i];
 
                 while (entry != nullptr)
                 {
-                    node<key_type, value_type> *next = entry->get_next();
+                    pointer next = entry->get_next();
                     size_t new_hash_value = m_hash_func(entry->get_key(), new_size);
 
                     entry->set_next(temp_table[new_hash_value]);
@@ -119,9 +168,9 @@ namespace stl
             m_table = temp_table;
         }
 
-        bool get(const key_type key, value_reference value)
+        bool find(const key_type key, value_reference value)
         {
-            node<key_type, value_type> *entry = m_table[m_hash_func(key, m_capacity)];
+            pointer entry = m_table[m_hash_func(key, m_capacity)];
 
             while (entry != nullptr)
             {
@@ -149,8 +198,8 @@ namespace stl
 
             size_t hash_value = m_hash_func(key, m_capacity);
 
-            node<key_type, value_type> *prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
-            node<key_type, value_type> *entry = m_table[hash_value]; // select the entry point for the forward list
+            pointer prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
+            pointer entry = m_table[hash_value]; // select the entry point for the forward list
 
             // transverse the forward list to the end while looking for the key
             while (entry != nullptr && entry->get_key() != key)
@@ -182,40 +231,175 @@ namespace stl
                 entry->set_value(value);
         }
 
-        size_type size() const noexcept     { return m_size; }
+        bool empty() const noexcept
+        {
+            for (size_type i = 0; i < m_capacity; i++)
+                if (m_table[i] != nullptr)
+                    return false;
 
-        size_type capacity() const noexcept { return m_capacity; }
+            return true;
+        }
 
-        iterator table() const noexcept     { return m_table; }
+        size_type size() const noexcept         { return m_size; }
 
-        iterator begin() { return m_table; }
+        size_type bucket_count() const noexcept { return m_capacity; }
 
-        iterator end()   { return m_table + m_capacity; }
+        size_type bucket(const key_type key)
+        {   
+            size_type hash_value = m_hash_func(key, m_capacity);
+            pointer entry = m_table[hash_value];
 
-        const_iterator cbegin() const noexcept { return m_table; }
+            while (entry != nullptr)
+            {
+                if (entry->get_key() == key)
+                    return hash_value;
 
-        const_iterator cend() const noexcept   { return m_table + m_capacity; }
+                entry = entry->get_next();
+            }
+        }
 
-        reverse_iterator rbegin() { return reverse_iterator(m_table + m_capacity); }
+        value_reference at(const key_type key)
+        {
+            pointer entry = m_table[m_hash_func(key, m_capacity)];
 
-        reverse_iterator rend()   { return reverse_iterator(m_table); }
+            while (entry != nullptr)
+            {   
+                if (entry->get_key() == key)
+                    return entry->get_value();
 
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_table + m_capacity); }
+                entry = entry->get_next();
+            }
 
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_table); }
+            throw std::out_of_range("Key not found!\n");
+        }
+        
+        class iterator
+        {
+        public:
+            iterator(bucket_iterator bucket_begin, bucket_iterator bucket_end, pointer node_it)
+                : m_bucket_begin(bucket_begin), m_bucket_end(bucket_end), m_node_it(node_it) 
+                { 
+                    // if node_it was null, the first bucket which is not null is searched using ++ operator defined below
+                    if (m_node_it == nullptr && m_bucket_begin != m_bucket_end)
+                        ++(*this);
+                }
+            
+            node<key_type, value_type>& operator*() const  { return *m_node_it; }
+
+            node<key_type, value_type>* operator->() const { return m_node_it; }
+
+            iterator& operator++() // prefix
+            {
+                if (m_node_it != nullptr)
+                    m_node_it = m_node_it->get_next();
+
+                while (m_node_it == nullptr && m_bucket_begin != m_bucket_end)
+                {
+                    m_bucket_begin++;
+                    
+                    if (m_bucket_begin != m_bucket_end)
+                        m_node_it = *m_bucket_begin;
+                }
+
+                return *this;
+            }
+
+            iterator operator++(int) // postfix
+            {
+                iterator temp = *this;
+
+                ++(*this);
+
+                return temp;
+            }
+
+            bool operator==(const iterator &other) { return m_bucket_begin == other.m_bucket_begin && m_node_it == other.m_node_it; }
+
+            bool operator!=(const iterator &other) { return !(*this == other); }
+
+        private:
+            bucket_iterator m_bucket_begin;
+            bucket_iterator m_bucket_end;
+            pointer         m_node_it;
+        };
+
+        class const_iterator
+        {
+        public:
+            const_iterator(const_bucket_iterator bucket_begin, const_bucket_iterator bucket_end, const_pointer node_it)
+                : m_bucket_begin(bucket_begin), m_bucket_end(bucket_end), m_node_it(node_it) 
+                { 
+                    if (m_node_it == nullptr && m_bucket_begin != m_bucket_end)
+                        ++(*this);
+                }
+
+                const node<key_type, value_type>& operator*() const  { return *m_node_it; }
+
+                const node<key_type, value_type>* operator->() const { return m_node_it; }
+
+                const_iterator& operator++()
+                {
+                    if (m_node_it != nullptr)
+                        m_node_it = m_node_it->get_next();
+
+                    while (m_node_it == nullptr && m_bucket_begin != m_bucket_end)
+                    {
+                        m_bucket_begin++;
+                        
+                        if (m_bucket_begin != m_bucket_end)
+                            m_node_it = *m_bucket_begin;
+                    }
+
+                    return *this;
+                }
+
+                const_iterator operator++(int)
+                {
+                    const_iterator temp = *this;
+
+                    ++(*this);
+
+                    return temp;
+                }
+
+                bool operator==(const iterator &other) { return m_bucket_begin == other.m_bucket_begin && m_node_it == other.m_node_it; }
+
+                bool operator!=(const iterator &other) { return !(*this == other); }
+
+        private:
+            const_bucket_iterator m_bucket_begin;
+            const_bucket_iterator m_bucket_end;
+            const_pointer         m_node_it;
+        };
+
+        iterator begin() { return iterator(m_table, m_table + m_capacity, m_table[0]); }
+
+        iterator end()   { return iterator(m_table + m_capacity, m_table + m_capacity, nullptr); }
+
+        const_iterator cbegin() const noexcept { return const_iterator(m_table, m_table + m_capacity, m_table[0]); }
+
+        const_iterator cend() const noexcept   { return const_iterator(m_table + m_capacity, m_table + m_capacity, nullptr); }
+
+        bucket_reverse_iterator rbegin() { return bucket_reverse_iterator(m_table + m_capacity); }
+
+        bucket_reverse_iterator rend()   { return bucket_reverse_iterator(m_table); }
+
+        const_bucket_reverse_iterator crbegin() const noexcept { return const_bucket_reverse_iterator(m_table + m_capacity); }
+
+        const_bucket_reverse_iterator crend() const noexcept   { return const_bucket_reverse_iterator(m_table); }
 
         ~hash_table() 
         {
             for (size_type i = 0; i < m_size; i++)
             {
-                node<key_type, value_type> *entry = m_table[i];
+                pointer entry = m_table[i];
 
                 while (entry != nullptr)
                 {
-                    node<key_type, value_type> *temp = entry;
+                    pointer temp = entry;
                     entry = entry->get_next();
 
-                    delete temp;
+                    delete temp; // the nodes are allocated using the new operator
                 }
             }
             
@@ -226,8 +410,8 @@ namespace stl
         node<key_type, value_type>** m_table;
         size_type                    m_size;     // total number of elements. It is incremented everytime a new <key, value> element is added
         size_type                    m_capacity; // total number of buckets
-        hash_function                m_hash_func;
+        hash_function_type           m_hash_func;
     };
 }
 
-#endif
+#endif // HASH_MAP_H

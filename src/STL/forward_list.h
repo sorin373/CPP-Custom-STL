@@ -1,10 +1,9 @@
 #ifndef __FORWARD_LIST_H__
-#define __FORWARD_LIST_H__ 1
+#define __FORWARD_LIST_H__
 
 #include "../memory/memory.h"
 
 #include <initializer_list>
-#include <bits/allocator.h>
 
 namespace stl
 {
@@ -113,7 +112,7 @@ namespace stl
 
         forward_list() noexcept : m_head(nullptr) { }
 
-        forward_list(size_type count, value_type value) : m_head(nullptr)
+        forward_list(size_type count, const value_type value) : m_head(nullptr)
         {
             while (count != 0)
             {
@@ -131,9 +130,20 @@ namespace stl
                 push_front(*p);
         }
 
-        iterator begin() const noexcept        { return this->m_head; }
+        forward_list(const forward_list &other) : m_head(nullptr)
+        {
+            iterator it = other.begin();
 
-        const_iterator cbegin() const noexcept { return this->m_head; }
+            while (it != nullptr)
+            {
+                push_front(it->get_node()->get_m_value());
+                it++;
+            }
+        }
+
+        iterator begin() const noexcept        { return iterator(this->m_head); }
+
+        const_iterator cbegin() const noexcept { return const_iterator(this->m_head); }
 
         iterator end() const noexcept          { return nullptr; }
 

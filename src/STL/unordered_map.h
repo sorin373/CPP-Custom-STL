@@ -129,8 +129,8 @@ namespace stl
         typedef       pair<key_type, value_type>*       pointer;
         typedef const pair<key_type, value_type>* const_pointer;
 
-        #define INITIAL_CAPACITY 16U
-        #define LOAD_FACTOR      0.75
+        constexpr static size_type INITIAL_CAPACITY = 16U;
+        constexpr static double LOAD_FACTOR = 0.75;
 
     public:
         typedef       pair<key_type, value_type>**       bucket_iterator;
@@ -186,6 +186,46 @@ namespace stl
                 insert(it.get_key(), it.get_value());
         }
 
+        unordered_map& operator=(const unordered_map other)
+        {
+            if (this != &other)
+            {
+                m_capacity = other.bucket_count();
+                m_size = other.size();
+
+                for (size_type i = 0; i < m_capacity; i++)
+                {
+                    pointer entry = other.get_m_table()[i];
+
+                    while (entry != nullptr)
+                    {
+                        insert(entry->get_key(), entry->get_value());
+                        entry = entry->get_next();
+                    }
+                }   
+            }
+                     
+            return *this;
+        }
+
+        unordered_map& operator=(std::initializer_list<pair<key_type, value_type>> init)
+        {
+            m_capacity = INITIAL_CAPACITY;
+            m_size = 0;
+
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (pair<key_type, value_type> it : init)
+                insert(it.get_key(), it.get_value());
+
+            return *this;
+        }
+
         void resize(size_type new_size)
         {
             pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)malloc(new_size * sizeof(pair<key_type, value_type>*));
@@ -232,6 +272,26 @@ namespace stl
             }
 
             return false;
+        }
+
+        void clear() noexcept
+        {
+            for (size_type i = 0; i < m_capacity; ++i)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    pointer temp = entry;
+                    entry = entry->get_next();
+
+                    delete temp;
+                }
+
+                m_table[i] = nullptr; 
+            }
+
+            m_size = 0;
         }
 
         void insert(const key_type key, const value_type value)
@@ -287,6 +347,8 @@ namespace stl
 
             return true;
         }
+
+        pair<key_type, value_type>** get_m_table() const noexcept { return m_table; }
 
         size_type size() const noexcept         { return m_size; }
 

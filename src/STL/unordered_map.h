@@ -21,9 +21,9 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    @file vector.h
+    @file unordered_map.h
 
-    @brief This is part of the standard template libraries (STL) and it is used to implement a hash table.
+    @brief This is part of the standard template libraries (STL) and it is used to implement an unordered map.
  */
 
 #ifndef __UNORDERED_MAP__

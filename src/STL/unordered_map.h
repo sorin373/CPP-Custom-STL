@@ -26,13 +26,14 @@
     @brief This is part of the standard template libraries (STL) and it is used to implement a hash table.
  */
 
-#ifndef __HASH_TABLE__
-#define __HASH_TABLE__
+#ifndef __UNORDERED_MAP__
+#define __UNORDERED_MAP__
 
 #include "reverse_iterator.h"
 
 #include <malloc.h>
 #include <stdexcept>
+#include <initializer_list>
 
 #define MALLOC_RUNTIME_ERROR throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
@@ -49,16 +50,16 @@
 
 namespace stl
 {
-    template <typename K, typename V> class node
+    template <typename K, typename V> class pair
     {
         typedef V     value_type;
         typedef K     key_type;
-        typedef node* pointer;
+        typedef pair* pointer;
 
         typedef V& reference;
 
     public:
-        node(const key_type key, const value_type value)
+        pair(const key_type key, const value_type value)
             : m_key(key), m_value(value), m_next(nullptr) { }
 
         key_type get_key() const noexcept         { return m_key; }
@@ -95,42 +96,53 @@ namespace stl
         }
     };
 
+    template <typename K> class key_equal
+    {
+    public:
+        bool operator()(const K &lhs, const K &rhs)
+        {
+            return lhs == rhs;
+        }
+    };
+
     /**
      * @brief This container represents a generic implementation of the hash table data structure.
      *        It consists in many member functions that help the user manage the hash table data faster and more efficiently.
      *        Moreover, it has automatic resizing when the load factor exceeds 75%.
      * @param K Key type
      * @param V Value type
-     * @param F Hash function
+     * @param _hash Hash function
+     * @param _key_equal Provides a function for key comparison
      */
-    template <typename K, typename V, typename F = key_hash<K>> class hash_table
+    template <typename K, typename V, typename _hash = key_hash<K>, typename _key_equal = key_equal<K>> class unordered_map
     {
-        typedef F   hash_function_type;
-        typedef V   value_type;
-        typedef K   key_type;
+        typedef _hash      hf_type;
+        typedef _key_equal ke_type;
+        typedef V          value_type;
+        typedef K          key_type;
 
         typedef unsigned int size_type;
 
         typedef       value_type&       value_reference;
         typedef const value_type& const_value_reference;
 
-        typedef       node<key_type, value_type>*       pointer;
-        typedef const node<key_type, value_type>* const_pointer;
+        typedef       pair<key_type, value_type>*       pointer;
+        typedef const pair<key_type, value_type>* const_pointer;
 
         #define INITIAL_CAPACITY 16U
-        #define LOAD_FACTOR 0.75
+        #define LOAD_FACTOR      0.75
 
     public:
-        typedef       node<key_type, value_type>**       bucket_iterator;
-        typedef const node<key_type, value_type>** const_bucket_iterator;
+        typedef       pair<key_type, value_type>**       bucket_iterator;
+        typedef const pair<key_type, value_type>** const_bucket_iterator;
 
-        typedef stl::reverse_iterator<node<key_type, value_type>*>             bucket_reverse_iterator;
-        typedef stl::const_reverse_iterator<node<key_type, value_type>*> const_bucket_reverse_iterator;
+        typedef stl::reverse_iterator<pair<key_type, value_type>*>             bucket_reverse_iterator;
+        typedef stl::const_reverse_iterator<pair<key_type, value_type>*> const_bucket_reverse_iterator;
 
-        hash_table(const size_type capacity = INITIAL_CAPACITY) 
-            : m_table(nullptr), m_size(0), m_capacity(capacity)
+        unordered_map(size_type bucket_count = INITIAL_CAPACITY) 
+            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
         { 
-            m_table = (node<key_type, value_type>**)malloc(m_capacity * sizeof(node<key_type, value_type>*));
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
 
             if (m_table == nullptr) MALLOC_RUNTIME_ERROR
 
@@ -138,9 +150,45 @@ namespace stl
                 m_table[i] = 0;
         }
 
+        unordered_map(const unordered_map &other) 
+            : m_table(nullptr), m_size(0), m_capacity(other.bucket_count())
+        {
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (size_type i = 0, n = other.bucket_count(); i < n; i++)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    insert(entry->get_key(), entry->get_value());
+                    entry = entry->get_next();
+                }
+            }
+        }
+
+        unordered_map(std::initializer_list<pair<key_type, value_type>> init, size_type bucket_count = INITIAL_CAPACITY) 
+            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
+        {
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (pair<key_type, value_type> it : init)
+                insert(it.get_key(), it.get_value());
+        }
+
         void resize(size_type new_size)
         {
-            node<key_type, value_type> **temp_table = (node<key_type, value_type>**)malloc(new_size * sizeof(node<key_type, value_type>*));
+            pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)malloc(new_size * sizeof(pair<key_type, value_type>*));
 
             if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
 
@@ -174,7 +222,7 @@ namespace stl
 
             while (entry != nullptr)
             {
-                if (entry->get_key() == key)
+                if (m_key_equal(entry->get_key(), key))
                 {
                     value = entry->get_value();
                     return true;
@@ -196,13 +244,13 @@ namespace stl
                 resize(m_capacity);
             }
 
-            size_t hash_value = m_hash_func(key, m_capacity);
+            size_type hash_value = m_hash_func(key, m_capacity);
 
             pointer prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
             pointer entry = m_table[hash_value]; // select the entry point for the forward list
 
             // transverse the forward list to the end while looking for the key
-            while (entry != nullptr && entry->get_key() != key)
+            while (entry != nullptr && !m_key_equal(entry->get_key(), key))
             {
                 prev = entry;
                 entry = entry->get_next();
@@ -211,10 +259,10 @@ namespace stl
             // if the entry is null that means the end of the list was reached and the key was not found
             if (entry == nullptr)
             {
-                // create a new node for the new element
-                entry = new node<key_type, value_type>(key, value);
+                // create a new pair for the new element
+                entry = new pair<key_type, value_type>(key, value);
                 
-                // if there prev is null that means the entry was null from the begining and there
+                // if prev is null that means the entry was null from the begining and there
                 // is not a list currently at that specific hash value. Therefore that bucket is assigned the address of the entry
                 if (prev == nullptr)
                     m_table[hash_value] = entry;
@@ -251,7 +299,7 @@ namespace stl
 
             while (entry != nullptr)
             {
-                if (entry->get_key() == key)
+                if (m_key_equal(entry->get_key(), key))
                     return hash_value;
 
                 entry = entry->get_next();
@@ -264,7 +312,7 @@ namespace stl
 
             while (entry != nullptr)
             {   
-                if (entry->get_key() == key)
+                if (m_key_equal(entry->get_key(), key))
                     return entry->get_value();
 
                 entry = entry->get_next();
@@ -284,9 +332,9 @@ namespace stl
                         ++(*this);
                 }
             
-            node<key_type, value_type>& operator*() const  { return *m_node_it; }
+            pair<key_type, value_type>& operator*() const  { return *m_node_it; }
 
-            node<key_type, value_type>* operator->() const { return m_node_it; }
+            pair<key_type, value_type>* operator->() const { return m_node_it; }
 
             iterator& operator++() // prefix
             {
@@ -333,9 +381,9 @@ namespace stl
                         ++(*this);
                 }
 
-                const node<key_type, value_type>& operator*() const  { return *m_node_it; }
+                const pair<key_type, value_type>& operator*() const  { return *m_node_it; }
 
-                const node<key_type, value_type>* operator->() const { return m_node_it; }
+                const pair<key_type, value_type>* operator->() const { return m_node_it; }
 
                 const_iterator& operator++()
                 {
@@ -388,7 +436,7 @@ namespace stl
 
         const_bucket_reverse_iterator crend() const noexcept   { return const_bucket_reverse_iterator(m_table); }
 
-        ~hash_table() 
+        ~unordered_map() 
         {
             for (size_type i = 0; i < m_size; i++)
             {
@@ -407,10 +455,11 @@ namespace stl
         }
 
     private:
-        node<key_type, value_type>** m_table;
+        pair<key_type, value_type>** m_table;
         size_type                    m_size;     // total number of elements. It is incremented everytime a new <key, value> element is added
         size_type                    m_capacity; // total number of buckets
-        hash_function_type           m_hash_func;
+        hf_type                      m_hash_func;
+        ke_type                      m_key_equal;
     };
 }
 

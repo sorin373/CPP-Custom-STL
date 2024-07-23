@@ -114,7 +114,8 @@ namespace stl
      * @param _hash Hash function
      * @param _key_equal Provides a function for key comparison
      */
-    template <typename K, typename V, typename _hash = key_hash<K>, typename _key_equal = key_equal<K>> class unordered_map
+    template <typename K, typename V, typename _hash = key_hash<K>, typename _key_equal = key_equal<K>> 
+    class unordered_map
     {
         typedef _hash      hf_type;
         typedef _key_equal ke_type;
@@ -139,250 +140,6 @@ namespace stl
         typedef stl::reverse_iterator<pair<key_type, value_type>*>             bucket_reverse_iterator;
         typedef stl::const_reverse_iterator<pair<key_type, value_type>*> const_bucket_reverse_iterator;
 
-        unordered_map(size_type bucket_count = INITIAL_CAPACITY) 
-            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
-        { 
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
-
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
-
-            for (size_type i = 0; i < m_capacity; i++)
-                m_table[i] = 0;
-        }
-
-        unordered_map(const unordered_map &other) 
-            : m_table(nullptr), m_size(0), m_capacity(other.bucket_count())
-        {
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
-
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
-
-            for (size_type i = 0; i < m_capacity; i++)
-                m_table[i] = 0;
-
-            for (size_type i = 0, n = other.bucket_count(); i < n; i++)
-            {
-                pointer entry = m_table[i];
-
-                while (entry != nullptr)
-                {
-                    insert(entry->get_key(), entry->get_value());
-                    entry = entry->get_next();
-                }
-            }
-        }
-
-        unordered_map(std::initializer_list<pair<key_type, value_type>> init, size_type bucket_count = INITIAL_CAPACITY) 
-            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
-        {
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
-
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
-
-            for (size_type i = 0; i < m_capacity; i++)
-                m_table[i] = 0;
-
-            for (pair<key_type, value_type> it : init)
-                insert(it.get_key(), it.get_value());
-        }
-
-        unordered_map& operator=(const unordered_map other)
-        {
-            if (this != &other)
-            {
-                m_capacity = other.bucket_count();
-                m_size = other.size();
-
-                for (size_type i = 0; i < m_capacity; i++)
-                {
-                    pointer entry = other.get_m_table()[i];
-
-                    while (entry != nullptr)
-                    {
-                        insert(entry->get_key(), entry->get_value());
-                        entry = entry->get_next();
-                    }
-                }   
-            }
-                     
-            return *this;
-        }
-
-        unordered_map& operator=(std::initializer_list<pair<key_type, value_type>> init)
-        {
-            m_capacity = INITIAL_CAPACITY;
-            m_size = 0;
-
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
-
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
-
-            for (size_type i = 0; i < m_capacity; i++)
-                m_table[i] = 0;
-
-            for (pair<key_type, value_type> it : init)
-                insert(it.get_key(), it.get_value());
-
-            return *this;
-        }
-
-        void resize(size_type new_size)
-        {
-            pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)malloc(new_size * sizeof(pair<key_type, value_type>*));
-
-            if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
-
-            for (size_type i = 0; i < new_size; i++)
-                m_table[i] = 0;
-
-            for (size_type i = 0; i < m_size; i++)
-            {
-                pointer entry = m_table[i];
-
-                while (entry != nullptr)
-                {
-                    pointer next = entry->get_next();
-                    size_t new_hash_value = m_hash_func(entry->get_key(), new_size);
-
-                    entry->set_next(temp_table[new_hash_value]);
-
-                    temp_table[new_hash_value] = entry;
-
-                    entry = next;
-                }
-            }
-
-            free(m_table);
-            m_table = temp_table;
-        }
-
-        bool find(const key_type key, value_reference value)
-        {
-            pointer entry = m_table[m_hash_func(key, m_capacity)];
-
-            while (entry != nullptr)
-            {
-                if (m_key_equal(entry->get_key(), key))
-                {
-                    value = entry->get_value();
-                    return true;
-                }
-
-                entry = entry->get_next();
-            }
-
-            return false;
-        }
-
-        void clear() noexcept
-        {
-            for (size_type i = 0; i < m_capacity; ++i)
-            {
-                pointer entry = m_table[i];
-
-                while (entry != nullptr)
-                {
-                    pointer temp = entry;
-                    entry = entry->get_next();
-
-                    delete temp;
-                }
-
-                m_table[i] = nullptr; 
-            }
-
-            m_size = 0;
-        }
-
-        void insert(const key_type key, const value_type value)
-        {
-            // check the load factor to see if the hash table needs resizing. (to do: not sure this is the right approach) 
-            // LOAD_FACTOR = 75% (predefined)
-            if ((double)(m_size) / m_capacity > LOAD_FACTOR)
-            {
-                m_capacity *= 2;
-                resize(m_capacity);
-            }
-
-            size_type hash_value = m_hash_func(key, m_capacity);
-
-            pointer prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
-            pointer entry = m_table[hash_value]; // select the entry point for the forward list
-
-            // transverse the forward list to the end while looking for the key
-            while (entry != nullptr && !m_key_equal(entry->get_key(), key))
-            {
-                prev = entry;
-                entry = entry->get_next();
-            }
-            
-            // if the entry is null that means the end of the list was reached and the key was not found
-            if (entry == nullptr)
-            {
-                // create a new pair for the new element
-                entry = new pair<key_type, value_type>(key, value);
-                
-                // if prev is null that means the entry was null from the begining and there
-                // is not a list currently at that specific hash value. Therefore that bucket is assigned the address of the entry
-                if (prev == nullptr)
-                    m_table[hash_value] = entry;
-                else
-                    // if prev != null that means that there is a list at the hash value and the entry is added at the back of this list
-                    prev->set_next(entry);
-
-                // m_size gets incremented for each entry
-                m_size++;
-            }
-            else
-                // if entry is not null that means the prev while was terminated when the same key was found.
-                // Therefore the value is just updated for this specific key
-                entry->set_value(value);
-        }
-
-        bool empty() const noexcept
-        {
-            for (size_type i = 0; i < m_capacity; i++)
-                if (m_table[i] != nullptr)
-                    return false;
-
-            return true;
-        }
-
-        pair<key_type, value_type>** get_m_table() const noexcept { return m_table; }
-
-        size_type size() const noexcept         { return m_size; }
-
-        size_type bucket_count() const noexcept { return m_capacity; }
-
-        size_type bucket(const key_type key)
-        {   
-            size_type hash_value = m_hash_func(key, m_capacity);
-            pointer entry = m_table[hash_value];
-
-            while (entry != nullptr)
-            {
-                if (m_key_equal(entry->get_key(), key))
-                    return hash_value;
-
-                entry = entry->get_next();
-            }
-        }
-
-        value_reference at(const key_type key)
-        {
-            pointer entry = m_table[m_hash_func(key, m_capacity)];
-
-            while (entry != nullptr)
-            {   
-                if (m_key_equal(entry->get_key(), key))
-                    return entry->get_value();
-
-                entry = entry->get_next();
-            }
-
-            throw std::out_of_range("Key not found!\n");
-        }
-        
         class iterator
         {
         public:
@@ -481,6 +238,426 @@ namespace stl
             const_bucket_iterator m_bucket_end;
             const_pointer         m_node_it;
         };
+
+        unordered_map(size_type bucket_count = INITIAL_CAPACITY) 
+            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
+        { 
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+        }
+
+        unordered_map(const unordered_map &other) 
+            : m_table(nullptr), m_size(0), m_capacity(other.bucket_count())
+        {
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (size_type i = 0, n = other.bucket_count(); i < n; i++)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    insert(entry->get_key(), entry->get_value());
+                    entry = entry->get_next();
+                }
+            }
+        }
+
+        unordered_map(std::initializer_list<pair<key_type, value_type>> init, size_type bucket_count = INITIAL_CAPACITY) 
+            : m_table(nullptr), m_size(0), m_capacity(bucket_count)
+        {
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (pair<key_type, value_type> it : init)
+                insert(it.get_key(), it.get_value());
+        }
+
+        unordered_map& operator=(const unordered_map other)
+        {
+            if (this != &other)
+            {
+                m_capacity = other.bucket_count();
+                m_size = other.size();
+
+                for (size_type i = 0; i < m_capacity; i++)
+                {
+                    pointer entry = other.get_m_table()[i];
+
+                    while (entry != nullptr)
+                    {
+                        insert(entry->get_key(), entry->get_value());
+                        entry = entry->get_next();
+                    }
+                }   
+            }
+                     
+            return *this;
+        }
+
+        unordered_map& operator=(std::initializer_list<pair<key_type, value_type>> init)
+        {
+            m_capacity = INITIAL_CAPACITY;
+            m_size = 0;
+
+            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+
+            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < m_capacity; i++)
+                m_table[i] = 0;
+
+            for (pair<key_type, value_type> it : init)
+                insert(it.get_key(), it.get_value());
+
+            return *this;
+        }
+
+        void rehash(size_type new_size)
+        {
+            pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)malloc(new_size * sizeof(pair<key_type, value_type>*));
+
+            if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
+
+            for (size_type i = 0; i < new_size; i++)
+                m_table[i] = 0;
+
+            for (size_type i = 0; i < m_size; i++)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    pointer next = entry->get_next();
+                    size_t new_hash_value = m_hash_func(entry->get_key(), new_size);
+
+                    entry->set_next(temp_table[new_hash_value]);
+
+                    temp_table[new_hash_value] = entry;
+
+                    entry = next;
+                }
+            }
+
+            free(m_table);
+            m_table = temp_table;
+        }
+
+        void reserve(size_type size)
+        {
+            rehash(size);
+        }
+
+        iterator find(const key_type key)
+        {
+            size_type hash_value = m_hash_func(key, m_capacity);
+            pointer entry = m_table[hash_value];
+
+            while (entry != nullptr)
+            {
+                if (m_key_equal(entry->get_key(), key))
+                    return iterator(m_table, m_table + m_capacity, entry);
+
+                entry = entry->get_next();
+            }
+
+            return end();
+        }
+
+        const_iterator find(const key_type key) const
+        {
+            size_type hash_value = m_hash_func(key, m_capacity);
+            pointer entry = m_table[hash_value];
+
+            while (entry != nullptr)
+            {
+                if (m_key_equal(entry->get_key(), key))
+                    return const_iterator(m_table, m_table + m_capacity, entry);
+
+                entry = entry->get_next();
+            }
+
+            return cend();
+        }
+
+        bool contains(const key_type key)
+        {
+            pointer entry = m_table[m_hash_func(key, m_capacity)];
+
+            while (entry != nullptr)
+            {
+                if (m_key_equal(entry->get_key(), key))
+                    return true;
+
+                entry = entry->get_next();
+            }
+
+            return false;
+        }
+
+        void clear() noexcept
+        {
+            for (size_type i = 0; i < m_capacity; ++i)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    pointer temp = entry;
+                    entry = entry->get_next();
+
+                    delete temp;
+                }
+
+                m_table[i] = nullptr; 
+            }
+
+            m_size = 0;
+        }
+
+        pair<iterator, bool> insert(const pair<key_type, value_type> p)
+        { 
+            if ((double)(m_size) / m_capacity > LOAD_FACTOR)
+            {
+                m_capacity *= 2;
+                rehash(m_capacity);
+            }
+
+            value_type pair_value = p.get_value();
+            key_type pair_key     = p.get_key();
+        
+            size_type hash_value = m_hash_func(pair_key, m_capacity);
+
+            pointer prev = nullptr;
+            pointer entry = m_table[hash_value];
+
+            while (entry != nullptr && !m_key_equal(entry->get_key(), pair_key))
+            {
+                prev = entry;
+                entry = entry->get_next();
+            }
+
+            if (entry == nullptr)
+            {
+                entry = new pair<key_type, value_type>(pair_key, pair_value);
+
+                if (prev == nullptr)
+                    m_table[hash_value] = entry;
+                else
+                    prev->set_next(entry);
+
+                m_size++;
+
+                return {iterator(m_table, m_table + m_capacity, entry), true};
+            }
+            else
+                entry->set_value(pair_value);
+
+            return {iterator(m_table, m_table + m_capacity, entry), false};
+        }
+
+        iterator insert(const_iterator hint, const pair<key_type, value_type> p)
+        {
+            pointer entry = hint.m_node_it;
+
+            key_type entry_key     = entry->get_key();
+            value_type entry_value = entry->get_value();
+
+            key_type pair_key     = p.get_key();
+            value_type pair_value = p.get_value();
+
+            pointer prev = nullptr;
+
+            if (m_key_equal(entry_key, pair_key))
+                entry->set_value(pair_value);
+            else
+            {
+                while (entry != nullptr)
+                {
+                    prev = entry;
+                    entry = entry->get_next();
+                }
+
+                entry = new pair<key_type, value_type>(pair_key, pair_value);
+
+                prev->set_next(entry);
+            }
+
+            return iterator(m_table, m_table + m_capacity, entry);
+        }
+
+        void insert(std::initializer_list<pair<key_type, value_type>> init)
+        {
+            if ((double)(m_size) / m_capacity > LOAD_FACTOR)
+            {
+                m_capacity *= 2;
+                rehash(m_capacity);
+            }
+
+            for (pair<key_type, value_type> it : init)
+            {
+                key_type pair_key = it.get_key();
+
+                size_type hash_value = m_hash_func(pair_key, m_capacity);
+
+                pointer prev = nullptr;
+                pointer entry = m_table[hash_value];
+
+                while (entry != nullptr && !m_key_equal(entry->get_key(), pair_key))
+                {
+                    prev = entry;
+                    entry = entry->get_next();
+                }
+
+                if (entry == nullptr)
+                {
+                    entry = new pair<key_type, value_type>(pair_key, it.get_value());
+                    
+                    if (prev == nullptr)
+                        m_table[hash_value] = entry;
+                    else
+                        prev->set_next(entry);
+
+                    m_size++;
+                }
+                else
+                    entry->set_value(it.get_value());
+            }
+        }
+
+        void insert(const key_type key, const value_type value)
+        {
+            // check the load factor to see if the hash table needs resizing. (to do: not sure this is the right approach) 
+            // LOAD_FACTOR = 75% (predefined)
+            if ((double)(m_size) / m_capacity > LOAD_FACTOR)
+            {
+                m_capacity *= 2;
+                rehash(m_capacity);
+            }
+
+            size_type hash_value = m_hash_func(key, m_capacity);
+
+            pointer prev  = nullptr;             // Keeps track of the last found pair in the forward list when the while is terminated
+            pointer entry = m_table[hash_value]; // select the entry point for the forward list
+
+            // transverse the forward list to the end while looking for the key
+            while (entry != nullptr && !m_key_equal(entry->get_key(), key))
+            {
+                prev = entry;
+                entry = entry->get_next();
+            }
+            
+            // if the entry is null that means the end of the list was reached and the key was not found
+            if (entry == nullptr)
+            {
+                // create a new pair for the new element
+                entry = new pair<key_type, value_type>(key, value);
+                
+                // if prev is null that means the entry was null from the begining and there
+                // is not a list currently at that specific hash value. Therefore that bucket is assigned the address of the entry
+                if (prev == nullptr)
+                    m_table[hash_value] = entry;
+                else
+                    // if prev != null that means that there is a list at the hash value and the entry is added at the back of this list
+                    prev->set_next(entry);
+
+                // m_size gets incremented for each entry
+                m_size++;
+            }
+            else
+                // if entry is not null that means the prev while was terminated when the same key was found.
+                // Therefore the value is just updated for this specific key
+                entry->set_value(value);
+        }
+
+        bool empty() const noexcept
+        {
+            for (size_type i = 0; i < m_capacity; i++)
+                if (m_table[i] != nullptr)
+                    return false;
+
+            return true;
+        }
+
+        pair<key_type, value_type>** get_m_table() const noexcept { return m_table; }
+
+        size_type size() const noexcept         { return m_size; }
+
+        size_type bucket_count() const noexcept { return m_capacity; }
+
+        size_type bucket_size(size_type index) const
+        {
+            size_type count = 0;
+            pointer entry = m_table[index];
+
+            while (entry != nullptr)
+            {
+                count++;
+                entry = entry->get_next();
+            }
+
+            return count;
+        }
+
+        size_type bucket(const key_type key)
+        {   
+            size_type hash_value = m_hash_func(key, m_capacity);
+            pointer entry = m_table[hash_value];
+
+            while (entry != nullptr)
+            {
+                if (m_key_equal(entry->get_key(), key))
+                    return hash_value;
+
+                entry = entry->get_next();
+            }
+        }
+
+        value_reference at(const key_type key)
+        {
+            pointer entry = m_table[m_hash_func(key, m_capacity)];
+
+            while (entry != nullptr)
+            {   
+                if (m_key_equal(entry->get_key(), key))
+                    return entry->get_value();
+
+                entry = entry->get_next();
+            }
+
+            throw std::out_of_range("Key not found!\n");
+        }
+
+        value_type& operator[](const key_type key)
+        {
+            for (size_type i = 0; i < m_capacity; i++)
+            {
+                pointer entry = m_table[i];
+
+                while (entry != nullptr)
+                {
+                    if (m_key_equal(entry->get_key(), key))
+                        return entry->get_value();
+
+                    entry = entry->get_next();
+                }
+            }
+
+            throw std::out_of_range("Key not found!\n"); 
+        }
 
         iterator begin() { return iterator(m_table, m_table + m_capacity, m_table[0]); }
 

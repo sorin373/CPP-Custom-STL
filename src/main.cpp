@@ -1,16 +1,16 @@
-#include <iostream>
+#include "testing/test.h"
 
-#include "STL/forward_list.h"
-#include "STL/array.h"
-#include "STL/vector.h"
+#define DEBUG_ALL 1
 
-#include <vector>
-
-using namespace stl;
+void run_tests();
 
 int main()
 {
-    stl::vector<stl::vector<int>> v;
+#if DEBUG_ALL
+    run_tests();
+#endif
 
-    return EXIT_SUCCESS;
+    return 0;
 }
+
+void run_tests() { Test::init(); }

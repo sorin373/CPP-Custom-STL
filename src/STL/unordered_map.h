@@ -21,7 +21,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    @file unordered_map.h
+    @file  unordered_map.h
 
     @brief This is part of the standard template libraries (STL) and it is used to implement an unordered map.
  */
@@ -30,12 +30,11 @@
 #define __UNORDERED_MAP__
 
 #include "reverse_iterator.h"
+#include "allocator.h"
 
 #include <malloc.h>
 #include <stdexcept>
 #include <initializer_list>
-
-#define MALLOC_RUNTIME_ERROR throw std::runtime_error("malloc: couldn't allocate memory!\n");
 
 /**
  * @todo
@@ -111,18 +110,25 @@ namespace stl
      *        Moreover, it has automatic resizing when the load factor exceeds 75%.
      * @param K Key type
      * @param V Value type
-     * @param _hash Hash function
-     * @param _key_equal Provides a function for key comparison
+     * @param _hash Hash function type
+     * @param _key_equal Key comparison function type
+     * @param _allocator Allocator type
      */
-    template <typename K, typename V, typename _hash = key_hash<K>, typename _key_equal = key_equal<K>> 
-    class unordered_map
+    template <
+        typename K, 
+        typename V, 
+        typename _hash = key_hash<K>, 
+        typename _key_equal = key_equal<K>, 
+        typename _allocator = allocator<pair<const K, V>*>
+    > class unordered_map
     {
         typedef _hash      hf_type;
         typedef _key_equal ke_type;
+        typedef _allocator alloc_type;
         typedef V          value_type;
         typedef K          key_type;
 
-        typedef unsigned int size_type;
+        typedef size_t size_type;
 
         typedef       value_type&       value_reference;
         typedef const value_type& const_value_reference;
@@ -241,10 +247,10 @@ namespace stl
 
         unordered_map(size_type bucket_count = INITIAL_CAPACITY) 
             : m_table(nullptr), m_size(0), m_capacity(bucket_count)
-        { 
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+        {
+            m_table = (pair<key_type, value_type>**)m_allocator.allocate(m_capacity);
 
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+            if (m_table == nullptr) ALLOCATOR_RUNTIME_ERROR
 
             for (size_type i = 0; i < m_capacity; i++)
                 m_table[i] = 0;
@@ -253,9 +259,9 @@ namespace stl
         unordered_map(const unordered_map &other) 
             : m_table(nullptr), m_size(0), m_capacity(other.bucket_count())
         {
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+            m_table = (pair<key_type, value_type>**)m_allocator.allocate(m_capacity);
 
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+            if (m_table == nullptr) ALLOCATOR_RUNTIME_ERROR
 
             for (size_type i = 0; i < m_capacity; i++)
                 m_table[i] = 0;
@@ -275,9 +281,9 @@ namespace stl
         unordered_map(std::initializer_list<pair<key_type, value_type>> init, size_type bucket_count = INITIAL_CAPACITY) 
             : m_table(nullptr), m_size(0), m_capacity(bucket_count)
         {
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+            m_table = (pair<key_type, value_type>**)m_allocator.allocate(m_capacity);
 
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+            if (m_table == nullptr) ALLOCATOR_RUNTIME_ERROR
 
             for (size_type i = 0; i < m_capacity; i++)
                 m_table[i] = 0;
@@ -313,9 +319,9 @@ namespace stl
             m_capacity = INITIAL_CAPACITY;
             m_size = 0;
 
-            m_table = (pair<key_type, value_type>**)malloc(m_capacity * sizeof(pair<key_type, value_type>*));
+            m_table = (pair<key_type, value_type>**)m_allocator.allocate(m_capacity);
 
-            if (m_table == nullptr) MALLOC_RUNTIME_ERROR
+            if (m_table == nullptr) ALLOCATOR_RUNTIME_ERROR
 
             for (size_type i = 0; i < m_capacity; i++)
                 m_table[i] = 0;
@@ -328,9 +334,9 @@ namespace stl
 
         void rehash(size_type new_size)
         {
-            pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)malloc(new_size * sizeof(pair<key_type, value_type>*));
+            pair<key_type, value_type> **temp_table = (pair<key_type, value_type>**)m_allocator.allocate(m_capacity);
 
-            if (temp_table == nullptr) MALLOC_RUNTIME_ERROR
+            if (temp_table == nullptr) ALLOCATOR_RUNTIME_ERROR
 
             for (size_type i = 0; i < new_size; i++)
                 m_table[i] = 0;
@@ -352,7 +358,7 @@ namespace stl
                 }
             }
 
-            free(m_table);
+            m_allocator.deallocate(m_table);
             m_table = temp_table;
         }
 
@@ -686,11 +692,11 @@ namespace stl
                     pointer temp = entry;
                     entry = entry->get_next();
 
-                    delete temp; // the nodes are allocated using the new operator
+                    m_allocator.n_deallocate(temp); // the nodes are allocated using the new operator
                 }
             }
             
-            free(m_table);
+            m_allocator.deallocate(m_table);
         }
 
     private:
@@ -699,6 +705,7 @@ namespace stl
         size_type                    m_capacity; // total number of buckets
         hf_type                      m_hash_func;
         ke_type                      m_key_equal;
+        alloc_type                   m_allocator;
     };
 }
 

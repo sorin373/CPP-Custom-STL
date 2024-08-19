@@ -4,7 +4,10 @@
 #include "../memory/memory.h"
 #include "reverse_iterator.h"
 
-#define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
+#define OUT_OF_BOUNDS_EXCEPTION   throw std::out_of_range("Index out of bounds!\n");
+#define MEMORY_OVERFLOW_EXCEPTION throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
+
+#define META_SIZE sizeof(T)
 
 namespace stl
 {
@@ -20,56 +23,63 @@ namespace stl
         typedef       value_type* pointer;
         typedef const value_type* const_pointer;
 
-        // Private aliases for the reverse iterators. The user will use the generic reverse_iterator template.
+        typedef size_t size_type;
+
+        constexpr static int __SIZE__ = array_size * META_SIZE;
+
+    public:
+
+        typedef T*       iterator;
+        typedef const T* const_iterator;
+
+        typedef T&       reference;
+        typedef const T& const_reference;
+
         typedef reverse_iterator<value_type>       reverse_iterator;
         typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
-        typedef size_t size_type;
+        array() noexcept { }
 
-    public:
-        /**
-         * @brief Define type aliases for the iterators types.
-         *        These iterators provide random access capabilities and can be used to traverse containers that store elements of value_type
-         * 
-         * @example 
-         * for (iterator it = array.begin(); it != array.end(); it++) {
-         *   Access each element using *it
-         * }
-         */
-        typedef value_type*     iterator;
-        typedef const iterator  const_iterator;
-
-        /**
-         * @brief Define type aliases for the references types.
-         *        They provide a way to refer to elements within the container and can be used to access or modify the element.
-         */
-        typedef value_type&     reference;
-        typedef const reference const_reference;
-
-        array() : m_data(nullptr)
+        array(const array& other)
         {
-            m_data = (value_type *)malloc(array_size * sizeof(value_type));
+            if (other.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
 
-            if (m_data == nullptr)
-                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+            for (size_type i = 0; i < array_size; ++i)
+                m_data[i] = other.m_data[i];
         }
 
-        array(std::initializer_list<value_type> init) : m_data(nullptr)
+        array(std::initializer_list<value_type> init)
         {
-            if (init.size() > array_size)
-                throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
+            if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
 
-            m_data = (value_type *)malloc(array_size * sizeof(value_type));
+            memcpy(m_data, init.begin(), __SIZE__);
+        }
 
-            if (m_data == nullptr)
-                throw std::runtime_error("malloc: couldn't allocate memory!\n");
+        array& operator=(const std::initializer_list<value_type> init)
+        {
+            if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
 
-            memcpy(m_data, init.begin(), array_size * sizeof(value_type));               // this does not set the rest of the elements to 0 (std::array does set the rest to 0)
+            memcpy(m_data, init.begin(), array_size * META_SIZE);            
+        }
+
+        array& operator=(const array& other)
+        {
+            if (this != &other)
+            {
+                if (other.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
+
+                for (size_type i = 0; i < array_size; ++i)
+                    m_data[i] = other[i];
+            }
+
+            return *this;
         }
 
         constexpr size_type max_size() const noexcept { return array_size; }
 
-        pointer data() noexcept { return this->m_data; }        
+        constexpr size_type size() const noexcept     { return array_size; }
+
+        pointer data() noexcept { return m_data; }         
 
         /**
          * @brief Returns a reference to an element within the container
@@ -92,30 +102,36 @@ namespace stl
 
             return m_data[index];
         }
-
+        
+        /**
+         * @brief Returns the first element of the array `data[0]`
+         */
         reference front()
         {
             if (array_size > 0)
                 return m_data[0];
         }
 
+        /**
+         * @brief Returns the last element of the array `data[array_size - 1]`
+         */
         reference back()
         {
             if (array_size > 0)
                 return m_data[array_size - 1];
         }
 
-        iterator begin() { return this->m_data; }
+        iterator begin() { return m_data; }
         
-        iterator end()   { return this->m_data + array_size; }
+        iterator end()   { return m_data + array_size; }
 
-        const_iterator cbegin() const noexcept { return this->m_data; }
+        const_iterator cbegin() const noexcept { return m_data; }
 
-        const_iterator cend() const noexcept   { return this->m_data + array_size; }
+        const_iterator cend() const noexcept   { return m_data + array_size; }
         
-        reverse_iterator rbegin() { return reverse_iterator(this->m_data + array_size); }
+        reverse_iterator rbegin() { return reverse_iterator(m_data + array_size); }
 
-        reverse_iterator rend()   { return reverse_iterator(this->m_data); }
+        reverse_iterator rend()   { return reverse_iterator(m_data); }
 
         const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + array_size); }
 
@@ -123,15 +139,15 @@ namespace stl
 
         void fill(const value_type value)
         {
-            for (size_type i = 0; i < array_size; i++)
+            for (size_type i = 0; i < array_size; ++i)
                 m_data[i] = value;
         }
 
-        void swap(array &arr)
+        void swap(array& arr)
         {
             iterator temp_m_data = this->m_data;
 
-            this->m_data = arr.m_data;
+            m_data = arr.m_data;
 
             arr.m_data = temp_m_data;
         }
@@ -158,56 +174,42 @@ namespace stl
             return m_data[index];
         }
 
-        bool operator==(const array other)
+        bool operator==(const array& other) const
         {
-            /**
-             * The compiler won't allow arrays with different sizes to be compared. As a result this if statement is unnecessary!!
-             
-            if (array_size != other.size())
-                return false;
-            */
-
-            for (size_type i = 0; i < array_size; i++)
-                if (this->m_data[i] != other.m_data[i])
+            for (size_type i = 0; i < array_size; ++i)
+                if (m_data[i] != other.m_data[i])
                     return false;
 
             return true;
         }
 
-        bool operator!=(const array other)
-        {
-            // same logic as '==' operator
+        bool operator!=(const array& other) const { return !(*m_data == other); }
 
-            return !(this->m_data == other.m_data);
+        bool operator<(const array& other) const 
+        {
+            for (size_type i = 0; i < array_size; ++i) 
+                if (m_data[i] < other.m_data[i]) 
+                    return true;
+                else if (m_data[i] > other.m_data[i]) 
+                    return false;
+
+            return false;
         }
 
-        bool operator<(const array other)
-        {
-            size_type i = array_size;
+        bool operator>(const array& other) const { return other < *this; }
 
-            while (i != 0)
-            {
-                int c_var_1 = (int)(this->m_data[i]);
-                int c_var_2 = (int)(other.m_data[i]);
+        bool operator>=(const array& other) const { return !(*this < other); }
 
-                return (c_var_1 - c_var_2) < 0;
+        bool operator<=(const array& other) const { return !(*this > other);}
 
-                i--;
-            }
-        }
-
-        bool operator>(const array other)  { return !(this->m_data < other.m_data); }
-
-        bool operator>=(const array other) { return !(this->m_data < other.m_data); }
-
-        bool operator<=(const array other) { return !(this->m_data > other.m_data); }
+        ~array() = default;
 
     private:
-        value_type *m_data;
+        value_type m_data[array_size];
     };
 
     /**
-     * @brief Extracts Ith  element from the array
+     * @brief Extracts Ith element from the array
      *        I must be an integer value in range [​0​, N). This is enforced at compile time as opposed to at() or operator[].
      * @param I   The index of the element
      * @param arr The array from which the contents are extracted 

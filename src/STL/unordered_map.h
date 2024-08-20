@@ -36,17 +36,6 @@
 #include <stdexcept>
 #include <initializer_list>
 
-/**
- * @todo
- * -> emplace()
- * -> find()
- * -> count()
- * -> erase()
- * -> clear()
- * -> operator[]
- * -> swap()
- */
-
 namespace stl
 {
     template <typename K, typename V> class pair

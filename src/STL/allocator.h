@@ -10,12 +10,12 @@ namespace stl
 	class allocator
 	{
 	public:
-		typedef T                  value_type;
-		typedef T*                 pointer;
-		typedef const T*           const_pointer;
-		typedef T&                 reference;
-		typedef const T&           const_reference;
-		typedef unsigned int       size_type;
+		typedef T               value_type;
+		typedef T*              pointer;
+		typedef const T*        const_pointer;
+		typedef T&              reference;
+		typedef const T&        const_reference;
+		typedef unsigned int    size_type;
 
 		template <typename U>
 		struct rebind { typedef allocator<U> other; };

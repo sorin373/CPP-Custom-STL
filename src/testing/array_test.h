@@ -2,7 +2,6 @@
 #define __ARRAY_TEST_H__
 
 #include <iostream>
-#include <cassert>
 #include "../STL/array.h"
 
 unsigned int COUNT = 0;
@@ -122,44 +121,23 @@ private:
 
     bool test_12() 
     {
-        stl::array<int, 3> a1 = {1, 2, 3};
-        stl::array<int, 3> a2 = {1, 2, 3};
-        stl::array<int, 3> a3 = {1, 2, 4};
+        stl::array<int, 3> a1 = {1, 2, 3}, a2 = {1, 2, 3}, a3 = {1, 2, 4};
 
-        // Test Case 1: Comparing arrays of the same size
-        if (a1 < a2 == true)   return false;
-        if (a1 > a2 == true)   return false;
-        if (a1 <= a2 == false) return false;
-        if (a1 >= a2 == false) return false; 
+        if (a1 == a2 == false)      return false;
+        if (a1 != a2 == true)       return false;
+        if (a1 == a3 == true)       return false;
 
-        if (a1 < a3 == false)  return false;
-        // if (!(a3 < a1)) return false;
-        // if (!(a3 > a1)) return false;
-        // if (!(a1 > a3)) return false;
-        // if (!(a3 >= a1)) return false;
-        // if (!(a1 >= a3)) return false;
+        if (a1 < a2 == true)        return false;
+        if (a1 > a2 == true)        return false;
+        if (a1 <= a2 == false)      return false;
+        if (a1 >= a2 == false)      return false; 
 
-        // Test Case 2: Different Sizes
-        // stl::array<int, 2> b1 = {1, 2};     // Smaller array
-        // stl::array<int, 3> b2 = {1, 2, 3};  // Larger array
-
-        // if (!(b1 < b2)) return false;
-        // if (!(b2 < b1)) return false;
-        // if (!(b2 > b1)) return false;
-        // if (!(b1 > b2)) return false;
-        // if (!(b2 >= b1)) return false;
-        // if (!(b1 >= b2)) return false;
-
-        // // Test Case 3: Edge Cases
-        // stl::array<int, 0> c1 = {};          // Empty array
-        // stl::array<int, 3> c2 = {1, 2, 3};   // Non-empty array
-
-        // if (!(c1 < c2)) return false;
-        // if (!(c2 < c1)) return false;
-        // if (!(c2 > c1)) return false;
-        // if (!(c1 > c2)) return false;
-        // if (!(c2 >= c1)) return false;
-        // if (!(c1 >= c2)) return false;
+        if (a1 < a3 == false)       return false;
+        if (a3 < a1 == true)        return false;
+        if (a3 > a1 == false)       return false;
+        if (a1 > a3 == true)        return false;
+        if (a3 >= a1 == false)      return false;
+        if (a1 >= a3 == true)       return false;
 
         return true;
     }

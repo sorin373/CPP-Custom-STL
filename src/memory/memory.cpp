@@ -1,9 +1,10 @@
 #include "memory.h"
 
-void memcpy(void *dest, const void *src, size_t size)
+void memcpy(void *dest, const void *src, unsigned int size)
 {
-    uint8_t *csrc = (uint8_t*)src, *cdest = (uint8_t*)dest;
+    const unsigned char *csrc = static_cast<const unsigned char*>(src);
+    unsigned char *cdest = static_cast<unsigned char*>(dest);
 
-    for (size_t i = 0; i < size; i++)
+    for (unsigned int i = 0; i < size; ++i)
         cdest[i] = csrc[i];
 }

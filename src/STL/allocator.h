@@ -1,42 +1,65 @@
 #ifndef __ALLOCATOR_H__
 #define __ALLOCATOR_H__
 
-#include "../memory/memory.h"
-
-#include <malloc.h>
+#include <new>
+#include <limits>
 
 #define ALLOCATOR_RUNTIME_ERROR throw std::runtime_error("Allocator: allocate() failed!\n"); 
 
 namespace stl
 {
-    template <typename T> 
-    class allocator
-    {
-        typedef T                 value_type;
-        typedef size_t            size_type;
-        typedef value_type*       pointer;
-        typedef const value_type* const_pointer;
+	template <typename T>
+	class allocator
+	{
+	public:
+		typedef T                  value_type;
+		typedef T*                 pointer;
+		typedef const T*           const_pointer;
+		typedef T&                 reference;
+		typedef const T&           const_reference;
+		typedef unsigned int       size_type;
 
-    public:
-        allocator() noexcept { }
+		template <typename U>
+		struct rebind { typedef allocator<U> other; };
 
-        constexpr void *allocate(size_type n = 1)
-        {
-            return malloc(sizeof(value_type) * n);
-        }
+		pointer address(reference value) const { return &value; }
+		const_pointer address(const_reference value) const { return &value; }
 
-        void n_deallocate(void *p)
-        {
-            operator delete(p);
-        }
+		allocator() noexcept { }
 
-        void deallocate(void *p)
-        {
-            free(p);
-        }
+		allocator(const allocator& other) noexcept { }
 
-        ~allocator() { }
-    };
+		template <typename U>
+		allocator(const allocator<U>& other) noexcept { }
+
+		~allocator() noexcept { }
+
+		size_type max_size() const noexcept { return std::numeric_limits<size_type>::max() / sizeof(value_type); }
+
+		pointer allocate(size_type size, const void* hint = nullptr) 
+		{
+			if (size == 0)
+				return nullptr;
+
+			pointer ptr = static_cast<pointer>(::operator new(size * sizeof(value_type)));
+
+			if (!ptr) throw std::bad_alloc();
+
+			return ptr;
+		}
+
+		void deallocate(pointer ptr, size_type) { ::operator delete(ptr); }
+
+		void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
+
+		void destroy(pointer ptr) { ptr->~T(); }
+	};
+
+	template <class T1, class T2>
+	bool operator==(const allocator<T1>&, const allocator<T2>&) throw() { return true; }
+
+	template <class T1, class T2>
+	bool operator!=(const allocator<T1>&, const allocator<T2>&) throw() { return false; }
 }
 
-#endif
+#endif // ALLOCATOR_H

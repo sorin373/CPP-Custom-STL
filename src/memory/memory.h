@@ -1,5 +1,5 @@
-#ifndef MEMORY_H
-#define MEMORY_H 1
+#ifndef __MEMORY_H__
+#define __MEMORY_H__
 
 #if _WIN32 || _WIN64
    #if _WIN64
@@ -17,15 +17,7 @@
   #endif
 #endif
 
-#define DEBUG 0
-
-typedef unsigned int        size_t;
-typedef unsigned char       uint8_t;
-typedef unsigned long long  uint64_t;
-
-/**
- * @brief Copies the values of size bytes from src to dest.
-*/
-void memcpy(void *dest, const void *src, size_t size);
+/** @brief Copies the values of size bytes from src to dest. */
+void memcpy(void *dest, const void *src, unsigned int size);
 
 #endif // MEMORY_H

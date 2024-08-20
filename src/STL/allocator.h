@@ -4,8 +4,6 @@
 #include <new>
 #include <limits>
 
-#define ALLOCATOR_RUNTIME_ERROR throw std::runtime_error("Allocator: allocate() failed!\n"); 
-
 namespace stl
 {
 	template <typename T>
@@ -48,7 +46,7 @@ namespace stl
 			return ptr;
 		}
 
-		void deallocate(pointer ptr, size_type) { ::operator delete(ptr); }
+		void deallocate(pointer ptr, size_type size) { ::operator delete(ptr); }
 
 		void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
 

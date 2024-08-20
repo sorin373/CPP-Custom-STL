@@ -4,7 +4,7 @@
 #include <iostream>
 #include "../STL/array.h"
 
-unsigned int COUNT = 0;
+static unsigned int COUNT = 0;
 
 #define TEST_CASE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
 
@@ -145,7 +145,7 @@ private:
     stl::array<T, ARRAY_SIZE>      arr;
     const std::initializer_list<T> il;
 
-    constexpr static unsigned int N  = 13;
+    constexpr static unsigned int N = 13;
 };
 
 #endif

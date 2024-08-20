@@ -7,5 +7,7 @@
 
 ## Custom generic implemetation of reverse iterators
 - [reverse_iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/reverse_iterator.h)
+## Custom generic implemetation of a default allocator
+- [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator.h)
 
 ### More documentation when all STL components are finished :)

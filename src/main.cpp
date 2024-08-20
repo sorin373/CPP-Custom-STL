@@ -1,18 +1,41 @@
 #include "testing/array_test.h"
+#include "testing/vector_test.h"
 
 #include <iostream>
 #include <chrono>
 #include <cstdlib>
 
+
 #include <string>
 
 int exit_code = 0;
+
+void arr_test();
+void vector_test();
+
 
 static void on_exit() { std::cout << "Exit code: " << exit_code << "\n"; }
 
 int main()
 {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    arr_test();
+    vector_test();
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    long long diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+
+    std::cout << "\nProcess exited in " << diff / 1000.00 << 's' << std::endl;
+    
+    atexit(&on_exit);
+
+    return exit_code;
+}
+
+void arr_test()
+{
+    std::cout << "\nTesting the array container:\n";
 
     const int N_INT = 4;
     array_container_test<int, N_INT> ac_int({1, 2, 3, 4});
@@ -54,13 +77,12 @@ int main()
         {false, 10000000}
     });
     ac_struct.__TEST__();
+}
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    long long diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+void vector_test()
+{
+    std::cout << "\nTesting the vector container:\n";
 
-    std::cout << "\nProcess exited in " << diff / 1000.00 << 's' << std::endl;
-    
-    atexit(&on_exit);
-
-    return exit_code;
+    vector_container_test<int> v = {1, 2, 3, 4};
+    v.__TEST__();
 }

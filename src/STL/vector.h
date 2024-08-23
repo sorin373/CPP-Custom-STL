@@ -1,5 +1,5 @@
 /**
- * @copyright MIT License
+ *  @copyright MIT License
 
     Copyright (c) 2024 Sorin Tudose
 
@@ -31,13 +31,28 @@
 #define __VECTOR_H__
 
 #include "allocator.h"
-#include "../memory/memory.h"
 #include "reverse_iterator.h"
+#include "core.h"
 
 #include <initializer_list>
-#include <malloc.h>
 #include <stdexcept>
 #include <math.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+  #if defined(_WIN64)
+    #define ENV 64
+  #else
+    #define ENV 32
+  #endif
+#elif defined(__GNUC__)
+  #if defined(__x86_64__) || defined(__ppc64__)
+    #define ENV 64
+  #else
+    #define ENV 32
+  #endif
+#else
+  #error "Unknown platform"
+#endif
 
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
 #define META_SIZE               sizeof(T)
@@ -54,17 +69,14 @@ namespace stl
         typename Allocator = allocator<T>
     > class vector
     {
+    public:
         typedef size_t    size_type;
         typedef T         value_type;
         typedef Allocator allocator_type;
 
-        // Private aliases for the reverse iterators. The user will use the generic reverse_iterator template.
         typedef reverse_iterator<value_type>       reverse_iterator;
         typedef const_reverse_iterator<value_type> const_reverse_iterator;
 
-        typedef vector& vector_reference;
-
-    public:
         /**
          * @brief Define type aliases for the iterators types.
          *        These iterators provide random access capabilities and can be used to traverse containers that store elements of value_type
@@ -86,9 +98,9 @@ namespace stl
 
         vector() noexcept : m_capacity(0), m_size(0), m_data(nullptr) { }
 
-        explicit vector(const Allocator& alloc) : m_alloc(alloc), m_capacity(0), m_size(0), m_data(nullptr) { }
+        explicit vector(const allocator_type& alloc) : m_alloc(alloc), m_capacity(0), m_size(0), m_data(nullptr) { }
 
-        /** @throw If the new memory block can not be allocated, a runtime error will be thrown. */
+        /** @throw If the new memory block can not be allocated, bad alloc will be thrown. */
         vector(std::initializer_list<value_type> init) : m_capacity(init.size()), m_size(init.size()), m_data(nullptr)
         {
             m_data = m_alloc.allocate(m_size);
@@ -114,7 +126,7 @@ namespace stl
          * @brief This function resizes the container. While the m_size increses by 1 the m_capacity is calculated 
          *        to be >= to m_size so that the container is resized efficently. The formula I came up with is:
          *        m_capacity = new_size + new_size / 2 + 1. It is designed to grow as the new_size gets bigger and bigger,
-         *        balancing the need to minimize the number of resizes and the memory overhead.
+         *        balancing the need of resizes.
          * @param new_size The new size to which the vector will be resized to
          * @throw If the new memory block can not be allocated, a runtime error will be thrown.
          */
@@ -205,7 +217,7 @@ namespace stl
 
         void insert(const_iterator position, value_type value)
         {
-            int index = get_index(position, this->begin());
+            int index = get_index(position, begin());
 
             if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
 
@@ -214,7 +226,7 @@ namespace stl
             if (m_size > m_capacity)
                 resize(m_size);
 
-            for (size_type i = this->size() - 1; i >= index; i--)
+            for (size_type i = size() - 1; i >= index; i--)
                 m_data[i + 1] = m_data[i];
 
             m_data[index] = value;
@@ -222,7 +234,7 @@ namespace stl
 
         void insert(const_iterator position, size_type size, value_type value)
         {
-            size_type index = get_index(position, this->begin());
+            size_type index = get_index(position, begin());
 
             if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
 
@@ -242,7 +254,7 @@ namespace stl
 
         void insert(const_iterator position, iterator it_1, iterator it_2)
         {
-            int index = get_index(position, this->begin());
+            int index = get_index(position, begin());
 
             if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
 
@@ -267,7 +279,7 @@ namespace stl
             if (this->m_size == 0)
                 return;
 
-            for (size_type i = 0, n = this->size(); i < n; ++i) 
+            for (size_type i = 0, n = size(); i < n; ++i) 
                 m_data[i].~T();
 
             m_size = 0;
@@ -275,9 +287,9 @@ namespace stl
 
         void erase(iterator position)
         {
-            if (position >= this->end()) OUT_OF_BOUNDS_EXCEPTION
+            if (position >= end()) OUT_OF_BOUNDS_EXCEPTION
 
-            for (iterator it = position; it != this->end() - 1; it++)
+            for (iterator it = position; it != end() - 1; it++)
                 *it = *(it + 1);
 
             --m_size;
@@ -285,11 +297,11 @@ namespace stl
 
         void erase(iterator begin, iterator end)
         {
-            if (begin >= this->end() || end >= this->end()) OUT_OF_BOUNDS_EXCEPTION
+            if (begin >= end() || end >= end()) OUT_OF_BOUNDS_EXCEPTION
 
             if (begin == end)
             {
-                this->erase(begin);
+                erase(begin);
                 return;
             }
 
@@ -308,7 +320,7 @@ namespace stl
 
             iterator it_original = end;
 
-            for (iterator it = begin; it != end && it_original != this->end(); it++)
+            for (iterator it = begin; it != end && it_original != end(); it++)
                 *it = *it_original++;
         } 
 
@@ -329,7 +341,7 @@ namespace stl
 
         template <typename... Args> iterator emplace(iterator position, Args... args)
         {
-            int index = get_index(this->begin(), position); // int type bec for some reason the for breaks if unsigned int 
+            int index = get_index(begin(), position); // int type bec for some reason the for breaks if unsigned int 
             size_type old_size = m_size;
 
             if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
@@ -342,7 +354,7 @@ namespace stl
             for (int i = old_size - 1; i >= index; i--)
                 m_data[i + 1] = m_data[i];
 
-            new (&m_data[index]) value_type(std::forward<Args>(args)...); // new (ptr) T(args) - placement new. It constructs an object of type T at the address ptr without allocating new memory
+            new (&m_data[index]) value_type(std::forward<Args>(args)...);
 
             return &m_data[index];
         }
@@ -416,13 +428,13 @@ namespace stl
             memcpy(m_data, init.begin(), m_size * META_SIZE);
         }
 
-        iterator begin()                       { return m_data; }
+        iterator begin()                       { return iterator(m_data); }
 
-        const_iterator cbegin() const noexcept { return m_data; }
+        const_iterator cbegin() const noexcept { return const_iterator(m_data); }
 
-        iterator end() noexcept                { return m_data + m_size; }
+        iterator end() noexcept                { return iterator(m_data + m_size); }
 
-        const_iterator cend() const noexcept   { return m_data + m_size; }
+        const_iterator cend() const noexcept   { return const_iterator(m_data + m_size); }
 
         reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size); }
 
@@ -446,12 +458,12 @@ namespace stl
             return m_data[index];
         }
 
-        vector_reference operator=(const vector& other) 
+        vector& operator=(const vector& other) 
         { 
             if (this != &other)
             {
                 if (m_data != nullptr)
-                    free(m_data);
+                    m_alloc.deallocate(m_data, m_capacity);
 
                 m_capacity = other.capcacity();
                 m_size     = other.size();
@@ -479,6 +491,27 @@ namespace stl
 
         constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
     };
+
+    template <typename T, typename Alloc>
+    inline void swap(vector<T, Alloc>& lhs, vector<T, Alloc>& rhs) { lhs.swap(rhs); }
+
+    template <typename T, typename Alloc>
+    inline bool operator==(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return stl::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin()); }
+
+    template <typename T, typename Alloc>
+    inline bool operator!=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs == rhs); }
+
+    template <typename T, typename Alloc>
+    inline bool operator<(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return stl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()); }
+
+    template <typename T, typename Alloc>
+    inline bool operator>(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return rhs < lhs; }
+
+    template <typename T, typename Alloc>
+    inline bool operator<=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs > rhs); }
+
+    template <typename T, typename Alloc>
+    inline bool operator>=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs < rhs); }
 }
 
 #endif // VECTOR_H

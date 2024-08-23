@@ -20,15 +20,15 @@ namespace stl
 		template <typename U>
 		struct rebind { typedef allocator<U> other; };
 
-		pointer address(reference value) const { return &value; }
-		const_pointer address(const_reference value) const { return &value; }
+		// pointer address(reference value) const { return &value; }
+		// const_pointer address(const_reference value) const { return &value; }
 
-		allocator() noexcept { }
+		// allocator() noexcept { }
 
-		allocator(const allocator& other) noexcept { }
+		// allocator(const allocator& other) noexcept { }
 
-		template <typename U>
-		allocator(const allocator<U>& other) noexcept { }
+		// template <typename U>
+		// allocator(const allocator<U>& other) noexcept { }
 
 		~allocator() noexcept { }
 
@@ -48,9 +48,9 @@ namespace stl
 
 		void deallocate(pointer ptr, size_type size) { ::operator delete(ptr); }
 
-		void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
+		// void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
 
-		void destroy(pointer ptr) { ptr->~T(); }
+		// void destroy(pointer ptr) { ptr->~T(); }
 	};
 
 	template <class T1, class T2>

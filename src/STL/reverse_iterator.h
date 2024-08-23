@@ -36,7 +36,8 @@ namespace stl
      * @example for (reverse_iterator<int> it = test.rbegin(); it != test.rend(); it++)
      * @param T Type of element
      */
-    template <typename T> class reverse_iterator
+    template <typename T> 
+    class reverse_iterator
     {
         typedef T*  iterator;
         typedef T&  reference;

@@ -6,7 +6,9 @@
 
 #include <iostream>
 
-#define TEST_CASE(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
+#define __debug_output_msg__ 0
+#define __send_console_msg__(VAR) { std::cerr << VAR << " "; }
+#define TEST_CASE(C) { if (!(C)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
 
 namespace my_alloc
 {
@@ -108,6 +110,11 @@ public:
 
         TEST_CASE(test_0());
         TEST_CASE(test_1());
+        TEST_CASE(test_2());
+        TEST_CASE(test_3());
+        TEST_CASE(test_4());
+        TEST_CASE(test_5());
+        TEST_CASE(test_6());
         
         test_allocator();
 
@@ -145,12 +152,117 @@ private:
         return true;
     }
 
-    void test_allocator() { std::cerr << "\nNo. of allocs: " << v.get_allocator().get_allocs() << std::endl; }
+    bool test_2()
+    {
+        stl::vector<T, Allocator> expected = il;
+
+        unsigned int index = 0;
+        for (auto it = v.begin(), size = v.size(); it != v.end(); ++it)
+        {
+            if (index == size && it != v.end())
+                return false;
+            
+            if (*it != expected[index])
+                return false;
+            
+            ++index;
+        }
+
+        return true;
+    }
+
+    bool test_3()
+    {
+        stl::vector<T, Allocator> expected = il;
+
+        unsigned int index = 0;
+        for (auto cit = v.cbegin(), size = v.size(); cit != v.cend(); ++cit)
+        {
+            if (index == size && cit != v.cend())
+                return false;
+            
+            if (*cit != expected[index])
+                return false;
+            
+            ++index;
+        }
+
+        return true;
+    }
+
+    bool test_4()
+    {
+        stl::vector<T, Allocator> expected = il;
+
+        int index = v.size() - 1;
+        for (auto rit = v.rbegin(); rit != v.rend(); ++rit)
+        {
+            if (*rit != v[index])
+                return false;
+            
+            --index;
+        }
+
+        return true;
+    }
+
+    bool test_5()
+    {
+        stl::vector<T, Allocator> expected = il;
+
+        int index = v.size() - 1;
+        for (auto crit = v.crbegin(); crit != v.crend(); ++crit)
+        {
+
+#if __debug_output_msg__
+            __send_console_msg__(*crit);
+            __send_console_msg__(v[index]);
+            std::cout << "\n";
+#endif            
+            if (*crit != v[index])
+                return false;
+            
+            --index;
+        }
+
+        return true;
+    }
+
+    bool test_6()
+    {
+        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> user_vector;
+
+        for (unsigned int i = 0, size = v.size(); i < size; ++i)
+            user_vector.push_back(v[i]);
+
+#if __debug_output_msg__
+        __send_console_msg__(v.size());
+        __send_console_msg__(user_vector.size());
+
+        std::cout << "\n";
+#endif
+        if (expected.size() != user_vector.size())
+            return false;
+
+        for (unsigned int i = 0, size = user_vector.size(); i < size; ++i)
+            if (expected[i] != user_vector[i])
+                return false;
+
+        return true;
+    }
+
+    bool test_7()
+    {
+        
+    }
+
+    void test_allocator() { std::cout << "\nSpace allocated: " << v.get_allocator().get_allocs() << std::endl; }
 
     stl::vector<T, Allocator>      v;
     const std::initializer_list<T> il;
 
-    constexpr static unsigned int N = 3;
+    constexpr static unsigned int N = 7;
 };
 
 #endif // VECTOR_TEST_H

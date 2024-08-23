@@ -3,6 +3,16 @@
 
 namespace stl
 {
+    typedef typeof(sizeof(0)) size_t;
+
+#if defined(__x86_64__) || defined(_M_X64)  // 64-bit platform
+    typedef unsigned long long uintptr_t;
+#elif defined(__i386__) || defined(_M_IX86) // 32-bit platform
+    typedef unsigned int uintptr_t;
+#endif
+
+    typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
+
     template <typename ItTypeI, typename ItTypeII>
     inline bool equal(ItTypeI lhs, ItTypeI lhs_end, ItTypeII rhs)
     {
@@ -86,6 +96,14 @@ namespace stl
 
         return (lhs == lhs_end) && (rhs == rhs_end);
     }
+
+    template <typename Type>
+    void swap(Type& lhs, Type& rhs)
+    {
+        Type aux = lhs;
+        lhs = rhs;
+        rhs = aux;
+    }
 }
 
-#endif
+#endif // CORE_H

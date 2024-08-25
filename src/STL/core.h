@@ -121,6 +121,6 @@ namespace stl
                 }
         } while (!is_sorted);
     }
-}
+} 
 
 #endif // CORE_H

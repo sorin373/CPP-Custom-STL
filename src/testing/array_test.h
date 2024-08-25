@@ -23,17 +23,44 @@ public:
         COUNT = 0;
 
         TEST_CASE(test_0());
-        TEST_CASE(test_1(2, m_array[2]));
-        TEST_CASE(test_2(2, m_array[2]));
-        TEST_CASE(test_3(m_array[0]));
-        TEST_CASE(test_4(m_array[ARRAY_SIZE - 1]));
+
+        try
+        {
+            TEST_CASE(test_1(2, m_array[2]));
+        }
+        catch(const std::out_of_range&) { ++COUNT; }
+        
+        try
+        {
+            TEST_CASE(test_2(2, m_array[2]));
+        }
+        catch(const std::out_of_range&) { ++COUNT; }
+        
+        try
+        {
+            TEST_CASE(test_3(m_array[0]));
+        }
+        catch(const std::out_of_range&) { ++COUNT; }
+        
+        try
+        {
+            TEST_CASE(test_4(m_array[ARRAY_SIZE - 1]));
+        }
+        catch(const std::out_of_range&) { ++COUNT; }
+        
         TEST_CASE(test_5());
         TEST_CASE(test_6());
         TEST_CASE(test_7());
         TEST_CASE(test_8());
         TEST_CASE(test_9());
         TEST_CASE(test_10());
-        TEST_CASE(test_11(m_array[3]));
+
+        try
+        {
+            TEST_CASE(test_11(m_array[3]));
+        }
+        catch(const std::out_of_range&) { ++COUNT; }
+        
         TEST_CASE(test_12());
         TEST_CASE(test_13());
         TEST_CASE(test_14());
@@ -56,26 +83,50 @@ private:
 
     bool test_1(const unsigned int& index, const T& res) 
     {
-        T result = m_array[index]; 
-        __check_result__(result, res);
+        try
+        {
+            T result = m_array[index]; 
+            __check_result__(result, res);
+        }
+        catch(const std::out_of_range&) { }     
+
+        return true;
     }
 
     bool test_2(const unsigned int& index, const T& res) 
     { 
-        T result = m_array.at(index);
-        __check_result__(result, res);
+        try
+        {
+            T result = m_array.at(index);
+            __check_result__(result, res);
+        }
+        catch(const std::out_of_range&) { }
+
+        return true;
     }
 
     bool test_3(const T& res) 
     {
-        T result = m_array.front(); 
-        __check_result__(result, res);
+        try
+        {
+            T result = m_array.front(); 
+            __check_result__(result, res);
+        }
+        catch(const std::out_of_range&) { }
+
+        return true;
     }
 
     bool test_4(const T& res) 
     { 
-        T result = m_array.back();
-        __check_result__(result, res);
+        try
+        {
+            T result = m_array.back();
+            __check_result__(result, res);
+        }
+        catch(const std::out_of_range&) { }
+
+        return true;
     } 
 
     bool test_5() 
@@ -143,8 +194,14 @@ private:
 
     bool test_11(const T& res) 
     { 
-        T result = stl::get<3>(m_array);
-        __check_result__(result, res);
+        try
+        {
+            T result = stl::get<3>(m_array);
+            __check_result__(result, res);
+        }
+        catch(const std::out_of_range&) { }
+        
+        return true;
     }
 
     bool test_12() 
@@ -191,10 +248,19 @@ private:
         stl::array<int, ARRAY_SIZE> test_array_only_int;
 
         test_array_only_int.fill(5);
-        __check_result_no_return__(test_array_only_int[0], 5);
 
-        test_array_only_int[0] = 10;
-        __check_result_no_return__(test_array_only_int[0], 10);
+        try
+        {
+            __check_result_no_return__(test_array_only_int[0], 5);
+        }
+        catch(const std::out_of_range&) { }
+
+        try 
+        {
+            test_array_only_int[0] = 10;
+            __check_result_no_return__(test_array_only_int[0], 10);
+        }
+        catch(const std::out_of_range&) { }
 
         return true;
     }

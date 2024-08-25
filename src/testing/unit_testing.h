@@ -3,9 +3,14 @@
 
 #include "all.h"
 
-#define __TEST_ALL__    0
+#include <complex>
+
+#define INT_MAX		2147483647
+#define INT_MIN		(-INT_MAX-1)
+
+#define __TEST_ALL__    1
 #define __TEST_ARRAY__  0
-#define __TEST_VECTOR__ 1
+#define __TEST_VECTOR__ 0
 
 static void test_array()
 {
@@ -15,7 +20,12 @@ static void test_array()
               << "| Testing the Array Container   |\n"
               << "+-------------------------------+\n\n";
 
-    array_container_test<int, __ARRAY_SIZE__> array_container_int({1, 2, 3, 4});
+    array_container_test<int, __ARRAY_SIZE__> array_container_int({
+        INT_MIN, 
+        2147483000, 
+        2147483646, 
+        INT_MAX
+    });
     array_container_int.__TEST__();    
 
     array_container_test<char, __ARRAY_SIZE__> array_container_char({'a', 'b', 'c', 'd'});
@@ -25,34 +35,32 @@ static void test_array()
     array_container_double.__TEST__();
 
     array_container_test<std::string, __ARRAY_SIZE__> array_container_string({
-        "home", 
-        "mateo", 
-        "andrei", 
-        "cosbuc"
+        "a set of words that is complete in itself, typically containing a subject and predicate", 
+        "the punishment assigned to a defendant found guilty by a court", 
+        "The term 'sentence' is widely used to refer to quite different types of unit. Grammatically, it is the highest unit and consists of one independent clause, or two or more related clauses. Orthographically and rhetorically, it is that unit which starts with a capital letter and ends with a full stop, question mark or exclamation mark.", 
+        "lorem"
     });
     array_container_string.__TEST__();
     
-    struct node 
+    class node 
     {
+    private:
         bool flag;
         int  value;
 
-        bool operator==(const node& other) const 
-        {
-            return flag == other.flag && value == other.value;
-        }
+    public:
+        node() { }
+        node(bool f, int v) : flag(f), value(v) { }
 
-        bool operator!=(const node& other) const 
-        {
-            return !(*this == other);
-        }
+        bool operator==(const node& other) const { return flag == other.flag && value == other.value; }
+        bool operator!=(const node& other) const { return !(*this == other); }
     };
 
     array_container_test<node, __ARRAY_SIZE__> array_container_struct({
-        {true, 1},
-        {false, 10},
-        {true, 4},
-        {false, 10000000}
+        {true,  2147480000},
+        {false, 2147483000},
+        {true,  2147483646},
+        {false, 2147483647}
     });
     array_container_struct.__TEST__();
 
@@ -63,6 +71,37 @@ static void test_array()
         400000000000
     });
     array_container_long_long.__TEST__();
+
+    array_container_test<bool, __ARRAY_SIZE__> array_container_bool({true, false, true, false});
+    array_container_bool.__TEST__();
+
+    array_container_test<stl::array<int, __ARRAY_SIZE__>, __ARRAY_SIZE__> array_container_array({
+        {{INT_MIN, -1, 0, 1}},
+        {{100, 1000, 10000, 100000}},
+        {{1000000, 2000000, 3000000, 4000000}},
+        {{2147483644, 2147483645, 2147483646, INT_MAX}}
+    });
+    array_container_array.__TEST__();
+
+    array_container_test<short, 0> array_container_null({});
+    array_container_null.__TEST__();
+
+    array_container_test<std::complex<double>, __ARRAY_SIZE__> array_container_complex({
+        {1.0, 2.0},
+        {3.0, 4.0},
+        {5.0, 6.0},
+        {7.0, 8.0}
+    });
+
+    enum class Color { Red, Green, Blue, Yellow };
+
+    array_container_test<Color, __ARRAY_SIZE__> array_container_enum({
+        Color::Red,
+        Color::Green,
+        Color::Blue,
+        Color::Yellow
+    });
+    array_container_enum.__TEST__();
 }
 
 static void test_vector()
@@ -71,8 +110,21 @@ static void test_vector()
     std::cout << "| Testing the Vector Container  |\n";
     std::cout << "+-------------------------------+\n\n";
 
-    vector_container_test<int> vector_container_int = {1, 2, 3, 4};
+    vector_container_test<int> vector_container_int = {
+        INT_MIN, 
+        2147483000, 
+        2147483646, 
+        INT_MAX
+    };
     vector_container_int.__TEST__();
+
+    vector_container_test<double> vector_container_double = {
+        1.7976931348623157E+308, 
+        1.5976931348623157E+308, 
+        1.3976931348623157E+308, 
+        1.1976931348623157E+308
+    };
+    vector_container_double.__TEST__();
 }
 
 void INIT_UNIT_TESTS()

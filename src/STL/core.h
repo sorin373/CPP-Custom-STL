@@ -104,6 +104,23 @@ namespace stl
         lhs = rhs;
         rhs = aux;
     }
+
+    template <typename Type>
+    void bubble_sort(Type *arr, stl::size_t size)
+    {
+        bool is_sorted = false;
+
+        do
+        {
+            is_sorted = true;
+            for (stl::size_t i = 0; i < size - 1; ++i)
+                if (arr[i] > arr[i + 1])
+                {
+                    stl::swap(arr[i], arr[i + 1]);
+                    is_sorted = false;
+                }
+        } while (!is_sorted);
+    }
 }
 
 #endif // CORE_H

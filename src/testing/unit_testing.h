@@ -3,6 +3,10 @@
 
 #include "all.h"
 
+#define __TEST_ALL__    0
+#define __TEST_ARRAY__  0
+#define __TEST_VECTOR__ 1
+
 static void test_array()
 {
     constexpr unsigned int __ARRAY_SIZE__ = 4;
@@ -73,8 +77,13 @@ static void test_vector()
 
 void INIT_UNIT_TESTS()
 {
+#if __TEST_ARRAY__ || __TEST_ALL__
     test_array();
+#endif
+
+#if __TEST_VECTOR__ || __TEST_ALL__
     test_vector();
+#endif
 }
 
 #endif // UNIT_TESTING_H

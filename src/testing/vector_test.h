@@ -1,13 +1,15 @@
 #ifndef __VECTOR_TEST_H__
 #define __VECTOR_TEST_H__
 
-#include "../STL/allocator.h"
 #include "../STL/vector.h"
 
 #include <iostream>
+#include <cassert>
 
 #define __debug_output_msg__ 0
-#define __send_console_msg__(VAR) { std::cerr << VAR << " "; }
+#define __send_console_msg__(VAR)        { std::cerr << VAR << ' '; }
+#define __check_result__(X, Y)           { assert(X == Y); return true; }
+#define __check_result_no_return__(X, Y) { assert(X == Y); }
 #define TEST_CASE(C) { if (!(C)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
 
 namespace my_alloc
@@ -116,7 +118,7 @@ public:
         TEST_CASE(test_5());
         TEST_CASE(test_6());
         
-        test_allocator();
+        test_custom_allocator();
 
         std::cout << "\n" << COUNT << "/" << N << " passed!\n\n";
     }
@@ -128,12 +130,10 @@ private:
     {
         stl::vector<T, Allocator> expected = il;
 
-        if (v.size() != expected.size())
-            return false;
+        __check_result_no_return__(v.size(), expected.size());
 
         for (unsigned int i = 0, size = v.size(); i < size; ++i)
-            if (v[i] != expected[i])
-                return false;
+            __check_result_no_return__(v[i], expected[i]);
 
         return true;
     }
@@ -142,12 +142,10 @@ private:
     {
         stl::vector<T, Allocator> expected = v;
 
-        if (expected.size() != v.size())
-            return false;
+        __check_result_no_return__(v.size(), expected.size());
 
         for (unsigned int i = 0, size = v.size(); i < size; ++i)
-            if (v[i] != expected[i])
-                return false;
+            __check_result_no_return__(v[i], expected[i]);
 
         return true;
     }
@@ -159,11 +157,15 @@ private:
         unsigned int index = 0;
         for (auto it = v.begin(), size = v.size(); it != v.end(); ++it)
         {
+#if __debug_output_msg__
+            __send_console_msg__(*it);
+            __send_console_msg__(expected[index]);
+            std::cout << "\n";
+#endif   
             if (index == size && it != v.end())
                 return false;
             
-            if (*it != expected[index])
-                return false;
+            __check_result_no_return__(*it, expected[index]);
             
             ++index;
         }
@@ -178,11 +180,15 @@ private:
         unsigned int index = 0;
         for (auto cit = v.cbegin(), size = v.size(); cit != v.cend(); ++cit)
         {
+#if __debug_output_msg__
+            __send_console_msg__(*cit);
+            __send_console_msg__(expected[index]);
+            std::cout << "\n";
+#endif   
             if (index == size && cit != v.cend())
                 return false;
             
-            if (*cit != expected[index])
-                return false;
+            __check_result_no_return__(*cit, expected[index]);
             
             ++index;
         }
@@ -197,9 +203,12 @@ private:
         int index = v.size() - 1;
         for (auto rit = v.rbegin(); rit != v.rend(); ++rit)
         {
-            if (*rit != v[index])
-                return false;
-            
+#if __debug_output_msg__
+            __send_console_msg__(*rit);
+            __send_console_msg__(v[index]);
+            std::cout << "\n";
+#endif   
+            __check_result_no_return__(*rit, v[index]);   
             --index;
         }
 
@@ -213,7 +222,6 @@ private:
         int index = v.size() - 1;
         for (auto crit = v.crbegin(); crit != v.crend(); ++crit)
         {
-
 #if __debug_output_msg__
             __send_console_msg__(*crit);
             __send_console_msg__(v[index]);
@@ -242,12 +250,10 @@ private:
 
         std::cout << "\n";
 #endif
-        if (expected.size() != user_vector.size())
-            return false;
+        __check_result_no_return__(expected.size(), user_vector.size());
 
         for (unsigned int i = 0, size = user_vector.size(); i < size; ++i)
-            if (expected[i] != user_vector[i])
-                return false;
+            __check_result_no_return__(user_vector[i], expected[i]);
 
         return true;
     }
@@ -257,7 +263,7 @@ private:
         
     }
 
-    void test_allocator() { std::cout << "\nSpace allocated: " << v.get_allocator().get_allocs() << std::endl; }
+    void test_custom_allocator() { std::cout << "\nSize allocated: " << v.get_allocator().get_allocs() << "\n"; }
 
     stl::vector<T, Allocator>      v;
     const std::initializer_list<T> il;

@@ -8,8 +8,7 @@ if exist %OUTPUT_FILE% (
     del %OUTPUT_FILE%
 )
 
-REM
-set FLAGS=-Os -flto
+set FLAGS=-Os
 
 set COMMAND=g++ -o %OUTPUT_FILE% %SOURCE_FILE% %FLAGS%
 set STRIP_COMMAND=strip %OUTPUT_FILE%
@@ -19,7 +18,7 @@ echo === %COMMAND%
 %COMMAND%
 
 if exist %OUTPUT_FILE% (
-    echo *** Compilation successful. Executable '%OUTPUT_FILE%' created.
+    echo === Compilation successful. Executable '%OUTPUT_FILE%' created.
 
     echo === %STRIP_COMMAND%
     %STRIP_COMMAND%
@@ -27,7 +26,5 @@ if exist %OUTPUT_FILE% (
     echo === %OUTPUT_FILE%
     %OUTPUT_FILE%
 ) else (
-    echo Compilation failed.
+    echo === Compilation failed.
 )
-
-pause

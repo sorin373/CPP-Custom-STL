@@ -12,16 +12,19 @@
 #define __send_console_msg__(VAR) { std::cerr << VAR << ' '; }
 #define __debug_output_msg__ 0
 
+#define __N_ALLOCS 10000
+
 namespace my_alloc
 {
     template <typename T>
     class custom_allocator_new
     {
     public:
-        typedef T value_type;
-        typedef T* pointer;
-        typedef const T* const_pointer;
-        typedef unsigned int size_type; 
+        typedef T              value_type;
+        typedef T*             pointer;
+        typedef const T*       const_pointer;
+        typedef stl::size_t    size_type; 
+        typedef const T&       const_reference;
 
         custom_allocator_new() = default;
         ~custom_allocator_new() = default;
@@ -38,16 +41,20 @@ namespace my_alloc
         void deallocate(pointer p, size_type size) { ::operator delete(p); }
 
         size_type max_size() const { return std::numeric_limits<size_type>::max(); }
+
+        void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
+
+        void destroy(pointer ptr) { ptr->~T(); }
     };
 
     template <typename T>
     class custom_allocator_malloc
     {
     public:
-        typedef T value_type;
-        typedef T* pointer;
-        typedef const T* const_pointer;
-        typedef unsigned int size_type; 
+        typedef T              value_type;
+        typedef T*             pointer;
+        typedef const T*       const_pointer;
+        typedef stl::size_t    size_type; 
 
         custom_allocator_malloc() = default;
         ~custom_allocator_malloc() = default;
@@ -70,10 +77,11 @@ namespace my_alloc
     class custom_tracking_allocator
     {
     public:
-        typedef T value_type;
-        typedef T* pointer;
-        typedef const T* const_pointer;
-        typedef unsigned int size_type; 
+        typedef T              value_type;
+        typedef T*             pointer;
+        typedef const T*       const_pointer;
+        typedef stl::size_t    size_type; 
+        typedef const T&       const_reference;
 
         constexpr custom_tracking_allocator() noexcept : m_allocs(0) { }
         ~custom_tracking_allocator() = default;
@@ -95,6 +103,10 @@ namespace my_alloc
 
         size_type get_allocs() const noexcept { return this->m_allocs; }
 
+        void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
+
+        void destroy(pointer ptr) { ptr->~T(); }
+
     private:
         size_type m_allocs;
     };
@@ -106,7 +118,7 @@ template <
 > class vector_container_test
 {
 public:
-    void __TEST__()
+    void __TEST__(const stl::size_t& SIZE = __N_ALLOCS)
     {
         COUNT = 0;
 
@@ -117,6 +129,10 @@ public:
         TEST_CASE(test_4());
         TEST_CASE(test_5());
         TEST_CASE(test_6());
+        TEST_CASE(test_7());
+        TEST_CASE(test_8(SIZE));
+        TEST_CASE(test_9(SIZE));
+        TEST_CASE(test_10());
         
         test_custom_allocator();
 
@@ -125,10 +141,17 @@ public:
 
     vector_container_test(const std::initializer_list<T>& init) : v(init), il(init) { }
 
+    void print_vector(const stl::vector<int>& vec) {
+        for (stl::size_t i = 0; i < vec.size(); ++i) {
+            std::cout << vec[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+
 private:
     bool test_0()
     {
-        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> expected = v;
 
         __check_result_no_return__(v.size(), expected.size());
 
@@ -144,7 +167,7 @@ private:
 
         __check_result_no_return__(v.size(), expected.size());
 
-        for (unsigned int i = 0, size = v.size(); i < size; ++i)
+        for (stl::size_t i = 0, size = v.size(); i < size; ++i)
             __check_result_no_return__(v[i], expected[i]);
 
         return true;
@@ -152,7 +175,7 @@ private:
 
     bool test_2()
     {
-        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> expected = v;
 
         unsigned int index = 0;
         for (auto it = v.begin(), size = v.size(); it != v.end(); ++it)
@@ -175,7 +198,7 @@ private:
 
     bool test_3()
     {
-        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> expected = v;
 
         unsigned int index = 0;
         for (auto cit = v.cbegin(), size = v.size(); cit != v.cend(); ++cit)
@@ -198,7 +221,7 @@ private:
 
     bool test_4()
     {
-        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> expected = v;
 
         int index = v.size() - 1;
         for (auto rit = v.rbegin(); rit != v.rend(); ++rit)
@@ -217,7 +240,7 @@ private:
 
     bool test_5()
     {
-        stl::vector<T, Allocator> expected = il;
+        stl::vector<T, Allocator> expected = v;
 
         int index = v.size() - 1;
         for (auto crit = v.crbegin(); crit != v.crend(); ++crit)
@@ -238,21 +261,27 @@ private:
 
     bool test_6()
     {
-        stl::vector<T, Allocator> expected = il;
-        stl::vector<T, Allocator> user_vector;
+        stl::vector<T, Allocator> expected = v;
+        stl::vector<T, Allocator> user_vector(v.size());
 
-        for (unsigned int i = 0, size = v.size(); i < size; ++i)
-            user_vector.push_back(v[i]);
+        for (stl::size_t i = 0, size = v.size(); i < size; ++i)
+            user_vector[i] = v[i];
 
 #if __debug_output_msg__
-        __send_console_msg__(v.size());
-        __send_console_msg__(user_vector.size());
+        std::cout << "Container sizes:\n";
 
-        std::cout << "\n";
+        __send_console_msg__(v.size());
+        std::cout << std::endl;
+
+        __send_console_msg__(expected.size());
+        std::cout << std::endl;
+
+        __send_console_msg__(user_vector.size());
+        std::cout << std::endl;
 #endif
         __check_result_no_return__(expected.size(), user_vector.size());
 
-        for (unsigned int i = 0, size = user_vector.size(); i < size; ++i)
+        for (stl::size_t i = 0, size = user_vector.size(); i < size; ++i)
             __check_result_no_return__(user_vector[i], expected[i]);
 
         return true;
@@ -260,7 +289,61 @@ private:
 
     bool test_7()
     {
-        
+        stl::vector<T, Allocator> init = v;
+        stl::vector<T, Allocator> aux;
+
+        for (stl::size_t i = 0, size = init.size(); i < size; ++i)
+            aux.push_back(init[i]);
+
+        __check_result_no_return__(aux.size(), init.size());
+
+        for (stl::size_t i = 0, size = aux.size(); i < size; ++i)
+            __check_result_no_return__(aux[i], init[i]);
+
+        return true;
+    }
+
+    bool test_8(const stl::size_t& N = 0)
+    {
+        stl::vector<T, Allocator> expected;
+        expected.assign(N, v[0]);
+
+        __check_result_no_return__(expected.size(), N);
+
+        for (stl::size_t i = 0, size = expected.size(); i < size; ++i)
+            __check_result_no_return__(expected[i], v[0]);
+
+        return true;
+    }
+
+    bool test_9(const stl::size_t& N = 0)
+    {
+        stl::vector<T, Allocator> expected(N, v[0]);
+        stl::vector<T, Allocator> new_vector;
+
+        new_vector.assign(expected.begin(), expected.end());
+
+        __check_result_no_return__(new_vector.size(), N);
+
+        for (stl::size_t i = 0, size = new_vector.size(); i < size; ++i)
+            __check_result_no_return__(expected[i], new_vector[i]);
+
+        return true;
+    }
+
+    bool test_10()
+    {
+        stl::array<char, __N_ALLOCS> extra;
+        extra.fill('b');
+
+        stl::vector<char> characters;
+        characters.assign(extra.begin(), extra.end());
+
+        __check_result_no_return__(characters.size(), __N_ALLOCS);
+        __check_result_no_return__(characters[0], 'b');
+        __check_result_no_return__(characters[__N_ALLOCS - 1], 'b');
+
+        return true;
     }
 
     void test_custom_allocator() { std::cout << "\nSize allocated: " << v.get_allocator().get_allocs() << "\n"; }
@@ -268,7 +351,7 @@ private:
     stl::vector<T, Allocator>      v;
     const std::initializer_list<T> il;
 
-    constexpr static unsigned int N = 7;
+    constexpr static unsigned int N = 11;
 };
 
 #endif // VECTOR_TEST_H

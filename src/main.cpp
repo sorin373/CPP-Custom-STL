@@ -12,7 +12,7 @@ static void on_exit() { std::cout << "Exit code: " << exit_code << "\n"; }
 int main()
 {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
+    
     INIT_UNIT_TESTS();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

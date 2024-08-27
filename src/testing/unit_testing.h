@@ -8,9 +8,23 @@
 #define INT_MAX		2147483647
 #define INT_MIN		(-INT_MAX-1)
 
-#define __TEST_ALL__    1
+#define __TEST_ALL__    0
 #define __TEST_ARRAY__  0
-#define __TEST_VECTOR__ 0
+#define __TEST_VECTOR__ 1
+
+class node 
+{
+private:
+    bool flag;
+    int  value;
+
+public:
+    node() { }
+    node(bool f, int v) : flag(f), value(v) { }
+
+    bool operator==(const node& other) const { return flag == other.flag && value == other.value; }
+    bool operator!=(const node& other) const { return !(*this == other); }
+};
 
 static void test_array()
 {
@@ -41,20 +55,6 @@ static void test_array()
         "lorem"
     });
     array_container_string.__TEST__();
-    
-    class node 
-    {
-    private:
-        bool flag;
-        int  value;
-
-    public:
-        node() { }
-        node(bool f, int v) : flag(f), value(v) { }
-
-        bool operator==(const node& other) const { return flag == other.flag && value == other.value; }
-        bool operator!=(const node& other) const { return !(*this == other); }
-    };
 
     array_container_test<node, __ARRAY_SIZE__> array_container_struct({
         {true,  2147480000},
@@ -125,6 +125,48 @@ static void test_vector()
         1.1976931348623157E+308
     };
     vector_container_double.__TEST__();
+
+    vector_container_test<char> vector_container_char = {'a', 'b', 'c', 'd'};
+    vector_container_char.__TEST__();
+
+    vector_container_test<bool> vector_container_bool = {true, false, true, false};
+    vector_container_bool.__TEST__();
+
+    vector_container_test<long long unsigned int> vector_container_long_long({
+        100000000000, 
+        200000000000, 
+        300000000000, 
+        400000000000
+    });
+    vector_container_long_long.__TEST__();
+
+    vector_container_test<std::complex<double>> vector_container_complex({
+        {1.0, 2.0},
+        {3.0, 4.0},
+        {5.0, 6.0},
+        {7.0, 8.0}
+    });
+    vector_container_complex.__TEST__();
+
+    vector_container_test<node> vector_container_struct({
+        {true,  2147480000},
+        {false, 2147483000},
+        {true,  2147483646},
+        {false, 2147483647},
+        {true,  INT_MAX},
+        {false, INT_MAX},
+        {true,  INT_MIN},
+        {false, INT_MIN}
+    });
+    vector_container_struct.__TEST__();
+
+    vector_container_test<stl::vector<int>> vector_container_vector({
+        {{INT_MIN, -1, 0, 1}},
+        {{100, 1000, 10000, 100000}},
+        {{1000000, 2000000, 3000000, 4000000}},
+        {{2147483644, 2147483645, 2147483646, INT_MAX}}
+    });
+    vector_container_vector.__TEST__();
 }
 
 void INIT_UNIT_TESTS()

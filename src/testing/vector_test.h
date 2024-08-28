@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cassert>
 
+#include <vector>
+
 #define TEST_CASE(C) { if (!(C)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
 #define __check_result_no_return__(X, Y) { assert(X == Y); }
 #define __check_result__(X, Y) { assert(X == Y); return true; }
@@ -13,6 +15,9 @@
 #define __debug_output_msg__ 0
 
 #define __N_ALLOCS 10000
+
+#define INT_MAX		2147483647
+#define INT_MIN		(-INT_MAX-1)
 
 namespace my_alloc
 {
@@ -133,20 +138,17 @@ public:
         TEST_CASE(test_8(SIZE));
         TEST_CASE(test_9(SIZE));
         TEST_CASE(test_10());
+        TEST_CASE(test_11());
+        TEST_CASE(test_12());
+        TEST_CASE(test_13());
+        TEST_CASE(test_14());
         
         test_custom_allocator();
 
         std::cout << "\n" << COUNT << "/" << N << " passed!\n\n";
     }
 
-    vector_container_test(const std::initializer_list<T>& init) : v(init), il(init) { }
-
-    void print_vector(const stl::vector<int>& vec) {
-        for (stl::size_t i = 0; i < vec.size(); ++i) {
-            std::cout << vec[i] << " ";
-        }
-        std::cout << std::endl;
-    }
+    constexpr vector_container_test(const std::initializer_list<T>& init) noexcept : v(init), il(init) { }
 
 private:
     bool test_0()
@@ -155,7 +157,7 @@ private:
 
         __check_result_no_return__(v.size(), expected.size());
 
-        for (unsigned int i = 0, size = v.size(); i < size; ++i)
+        for (stl::size_t i = 0, size = v.size(); i < size; ++i)
             __check_result_no_return__(v[i], expected[i]);
 
         return true;
@@ -177,7 +179,7 @@ private:
     {
         stl::vector<T, Allocator> expected = v;
 
-        unsigned int index = 0;
+        stl::size_t index = 0;
         for (auto it = v.begin(), size = v.size(); it != v.end(); ++it)
         {
 #if __debug_output_msg__
@@ -200,7 +202,7 @@ private:
     {
         stl::vector<T, Allocator> expected = v;
 
-        unsigned int index = 0;
+        stl::size_t index = 0;
         for (auto cit = v.cbegin(), size = v.size(); cit != v.cend(); ++cit)
         {
 #if __debug_output_msg__
@@ -345,13 +347,61 @@ private:
 
         return true;
     }
+    
+    bool test_11()
+    {
+        stl::vector<int> vec;
+        vec.assign({INT_MAX, INT_MAX - 1, INT_MIN, INT_MIN + 1});
+
+        stl::vector<int> expected;
+        expected.assign({INT_MAX, INT_MAX - 1, INT_MIN, INT_MIN + 1});
+
+        __check_result_no_return__(expected.size(), vec.size());
+
+        for (stl::size_t i = 0, size = expected.size(); i < size; ++i)
+            __check_result_no_return__(expected[i], vec[i]);
+
+        return true;
+    }
+
+    bool test_12()
+    {
+        T lhs = v.at(0), rhs = v.at(v.size() - 1);
+
+        __check_result_no_return__(lhs, v[0]);
+        __check_result_no_return__(rhs, v[v.size() - 1]);
+
+        return true;
+    }
+
+    bool test_13()
+    {
+        T lhs = v.front(), rhs = v.back();
+
+        __check_result_no_return__(lhs, v[0]);
+        __check_result_no_return__(rhs, v[v.size() - 1]);
+
+        return true;
+    }
+
+    bool test_14()
+    {
+        stl::vector<T, Allocator> expected = v;
+        
+        __check_result_no_return__(v.size(), expected.size());
+        
+        for (auto it = v.begin(), expected_it = expected.begin(); it != v.end(); ++it, ++expected_it)
+            __check_result_no_return__(*it, *expected_it);
+        
+        return true;
+    }
 
     void test_custom_allocator() { std::cout << "\nSize allocated: " << v.get_allocator().get_allocs() << "\n"; }
 
     stl::vector<T, Allocator>      v;
     const std::initializer_list<T> il;
 
-    constexpr static unsigned int N = 11;
+    constexpr static stl::size_t N = 15;
 };
 
 #endif // VECTOR_TEST_H

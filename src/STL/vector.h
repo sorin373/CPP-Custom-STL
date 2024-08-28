@@ -31,12 +31,13 @@
 #define __VECTOR_H__
 
 #include "allocator.h"
-#include "reverse_iterator.h"
 #include "core.h"
 
 #include <initializer_list>
 #include <stdexcept>
 #include <math.h>
+
+#include <iterator> // stl iterator not working so std::reverse_iterator is used for now
 
 #if defined(_WIN32) || defined(_WIN64)
   #if defined(_WIN64)
@@ -87,9 +88,9 @@ namespace stl
 
         typedef T&          reference;
         typedef const T&    const_reference;
-
-        typedef reverse_iterator<value_type>          reverse_iterator;
-        typedef const_reverse_iterator<value_type>    const_reverse_iterator;
+        
+        typedef std::reverse_iterator<iterator>              reverse_iterator;
+        typedef std::reverse_iterator<const_iterator>  const_reverse_iterator;
 
         /**********************************
         * MEMBER FUNCTIONS - CONSTRUCTORS *
@@ -179,6 +180,10 @@ namespace stl
                         m_alloc.destroy(m_data + i);
 
                     m_alloc.deallocate(m_data, m_capacity);
+
+                    m_data = nullptr;
+                    m_size = m_capacity = 0;
+
                     throw;
                 }
             }   
@@ -211,6 +216,10 @@ namespace stl
                         m_alloc.destroy(m_data + i);
 
                     m_alloc.deallocate(m_data, m_capacity);
+
+                    m_data = nullptr;
+                    m_size = m_capacity = 0;
+
                     throw;
                 }
             }    
@@ -243,8 +252,12 @@ namespace stl
                 {
                     for (size_type i = 0; i < m_size; ++i)
                         m_alloc.destroy(m_data + i);
-
+                        
                     m_alloc.deallocate(m_data, m_capacity);
+                        
+                    m_data = nullptr;
+                    m_size = m_capacity = 0;
+                    
                     throw;
                 }
             }
@@ -310,7 +323,12 @@ namespace stl
         vector& operator=(const std::initializer_list<T> init)
         {
             if (m_data != nullptr)
+            {
+                for (size_type i = 0; i < m_size; ++i)
+                    m_alloc.destroy(m_data + i);
+
                 m_alloc.deallocate(m_data, m_capacity);
+            }
 
             m_capacity = m_size = init.size();
 
@@ -331,9 +349,20 @@ namespace stl
          * 
          * @example stl::vector<char> characters;
          *          characters.assign(5, 'a');
+         * 
+         * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
          */
         void assign(size_type size, const reference value)
         {
+            if (m_data != nullptr)
+            {
+                for (size_type i = 0; i < m_size; ++i)
+                    m_alloc.destroy(m_data + i);
+
+                m_alloc.deallocate(m_data, m_capacity);
+                m_data = nullptr;
+            }
+
             if (size > 0)
             {
                 m_size = m_capacity = size;
@@ -350,6 +379,11 @@ namespace stl
                         m_alloc.destroy(m_data + i);
 
                     m_alloc.deallocate(m_data, m_capacity);
+
+                    m_data = nullptr;
+                    m_size = m_capacity = 0;
+                    
+                    throw;
                 }
             }
         }
@@ -362,9 +396,11 @@ namespace stl
          *          stl::vector<char> characters;
          *          
          *          characters.assign(extra.begin(), extra.end());
+         * 
+         * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
          */
-        template <typename InputIT>
-        void assign(InputIT first, InputIT last)
+        template <typename InputIt>
+        void assign(InputIt first, InputIt last)
         {
             if (first == nullptr || last == nullptr)
                 return;
@@ -389,22 +425,291 @@ namespace stl
                     m_alloc.destroy(m_data + i);
 
                 m_alloc.deallocate(m_data, size);
+
+                m_data = nullptr;
+                m_size = m_capacity = 0;
+
                 throw;
             }
 
             m_size = m_capacity = size;
         }
 
-        /*################################################## __TO DO__ ##################################################*/
-
+        /**
+         * @brief Replaces the contents with the elements from the initializer list `init`.
+         * @param init initializer list to copy the values from
+         * 
+         * @example stl::vector<char> characters;
+         *          characters.assign({'C', '+', '+', '1', '1'});
+         * 
+         * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
+         */
         void assign(std::initializer_list<value_type> init)
         { 
-            m_size = m_capacity = init.size();
+            if (m_data != nullptr)
+            {
+                for (size_type i = 0; i < m_size; ++i)
+                    m_alloc.destroy(m_data + i);
 
+                m_alloc.deallocate(m_data, m_capacity);
+                m_data = nullptr;
+            }
+
+            m_size = m_capacity = init.size();
             m_data = m_alloc.allocate(m_size);
 
-            memcpy(m_data, init.begin(), m_size * META_SIZE);
+            try
+            {   
+                const value_type* it = init.begin();
+                for (size_type i = 0; i < m_size; ++i)
+                {
+                    m_alloc.construct(m_data + i, *it);
+                    ++it;
+                }
+            }
+            catch(...)
+            {
+                for (size_type i = 0; i < m_size; ++i)
+                    m_alloc.destroy(m_data + i);
+
+                m_alloc.deallocate(m_data, m_capacity);
+
+                m_data = nullptr;
+                m_size = m_capacity = 0;
+
+                throw;
+            }
         }
+
+        /**
+         * @brief  Returns the allocator associated with the container.
+         * @return The associated allocator.
+         */
+        constexpr allocator_type get_allocator() const noexcept { return m_alloc; }
+
+        /*****************
+        * ELEMENT ACCESS *
+        *****************/
+        
+        /**
+         * @brief Returns a reference to the element at specified location pos, with bounds checking.
+         * @param pos position of the element to return
+         * @return Reference to the requested element, i.e. *(a.begin() + pos)
+         * @throw  If pos is not within the range of the container, an exception of type std::out_of_range is thrown
+         * 
+         * @example stl::vector<int> data({1, 2, 4, 5, 5, 6});
+         * 
+         *          std::cout << data.at(1) << std::endl;       // 2
+         *          
+         *          data.at(1) = 88;
+         *          std::cout << data.at(1) << std::endl;       // 88
+         */
+        reference at(size_type pos) 
+        { 
+            if (pos >= m_size) OUT_OF_BOUNDS_EXCEPTION 
+            return *(m_data + pos); 
+        }
+
+        /**
+         * @brief Returns a constant reference to the element at specified location pos, with bounds checking.
+         * @param pos position of the element to return
+         * @return Constant reference to the requested element, i.e. *(a.cbegin() + pos)
+         * @throw  If pos is not within the range of the container, an exception of type std::out_of_range is thrown
+         * 
+         * @example const stl::vector<int> data({1, 2, 3, 4, 5, 6});
+         * 
+         *          for (stl::size_t i = 0, size = data.size(); i < size; ++i)
+         *              std::cout << data.at(i) << std::endl;                   // Using the const version of at() which prevents modification
+         */
+        const_reference at(size_type pos) const 
+        { 
+            if (pos >= m_size) OUT_OF_BOUNDS_EXCEPTION 
+            return *(m_data + pos);
+        }
+
+        /**
+         * @brief Returns a reference to the element at specified location pos. No bounds checking is performed.
+         * @param pos position of the element to return
+         * @return Reference to the requested element.
+         * 
+         * @example stl::vector<int> data({1, 2, 4, 5, 5, 6});
+         * 
+         *          std::cout << data[1] << std::endl;        // 2
+         * 
+         *          data[1] = 88;
+         *          std::cout << data[1] << std::endl;        // 88
+         */
+        reference operator[](size_type pos) { return at(pos); }
+
+        /**
+         * @brief Returns a constant reference to the element at specified location pos. No bounds checking is performed.
+         * @param pos position of the element to return
+         * @return Constant reference to the requested element.
+         * 
+         * @example const stl::vector<int> data({1, 2, 3, 4, 5, 6});
+         * 
+         *          for (stl::size_t i = 0, size = data.size(); i < size; ++i)
+         *              std::cout << data[i] << std::endl;                      // Using the const version of @c [] which prevents modification
+         */
+        constexpr const_reference operator[](size_type pos) const { return at(pos); }
+
+        /**
+         * @brief  Returns a reference to the first element in the container.
+         * @return Reference to the first element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         *          std::cout << my_vector.front();                 // 1 
+         * 
+         *          my_vector.front() = 88;
+         *          std::cout << my_vector.front();                 // 88
+         */
+        reference front() noexcept { return *m_data; }
+
+
+        /**
+         * @brief  Returns a constant reference to the first element in the container.
+         * @return Constant reference to the first element.
+         * 
+         * @example const stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         *          std::cout << my_vector.front() << std::endl;                // Using the const version of @fn front() which prevents modification
+         * 
+         */
+        constexpr const_reference front() const noexcept { return *m_data; }
+
+        /**
+         * @brief  Returns a reference to the last element in the container.
+         * @return Reference to the last element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         *          std::cout << my_vector.back();                  // 6
+         * 
+         *          my_vector.back() = 88;
+         *          std::cout << my_vector.back();                  // 88
+         */
+        reference back() noexcept  { return *(m_data + m_size - 1); }
+
+        /**
+         * @brief  Returns a constant reference to the last element in the container.
+         * @return Constant reference to the last element.
+         * 
+         * @example const stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         *          std::cout << my_vector.back() << std::endl;             // Using the const version of @fn back() which prevents modification
+         * 
+         */
+        constexpr const_reference back() const noexcept { return *(m_data + m_size - 1); }
+
+        /**
+         * @brief Returns a pointer to the underlying array serving as element storage. 
+         *        The pointer is such that range [data(), data() + size()) is always a valid range, even if the container is empty
+         * @return Pointer to the underlying element storage. 
+         *         For non-empty containers, the returned pointer compares equal to the address of the first element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4});
+         *          int* ptr = my_vector.data();
+         *          
+         */
+        T* data() noexcept { return m_data; }
+
+        /**
+         * @brief Returns a constant pointer to the underlying array serving as element storage. 
+         *        The pointer is such that range [data(), data() + size()) is always a valid range, even if the container is empty
+         * @return Constant pointer to the underlying element storage. 
+         *         For non-empty containers, the returned pointer compares equal to the address of the first element.
+         * 
+         * @example const stl::vector<int> my_vector({1, 2, 3, 4});
+         *          const int* ptr = my_vector.data();                     // Using the const version of @fn data() which prevents modification
+         *          
+         */
+        constexpr T* data() const noexcept { return m_data; }
+
+        /************
+        * ITERATORS *
+        ************/
+
+        /**
+         * @brief Returns an iterator to the first element of the vector.
+         * @return Iterator to the first element.
+         * @note If the vector is empty, the returned iterator will be equal to `end()`.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5});
+         *             
+         *          // print elements
+         *          // `std::vector<Type>::iterator` is the same as `Type*` - look into the object's typedefs
+         * 
+         *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
+         *              std::cout << *it << " "; // used @c * for primitive type `int`
+         * 
+         *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
+         *              *it = 0;                 // modify value
+         */
+        iterator begin() { return iterator(m_data); }
+
+        /**
+         * @brief Returns a constant iterator to the first element of the vector.
+         * @return Constant iterator to the first element.
+         * @note If the vector is empty, the returned iterator will be equal to `cend()`.
+         * 
+         * @example const stl::vector<int> my_vector({1, 2, 3, 4, 5});
+         *             
+         *          // `std::vector<Type>::const_iterator` is the same as `const Type*` - look into the object's typedefs
+         *          
+         *          // Using the const @fn cbegin() and @fn cend() which prevents modification
+         *          for (stl::vector<int>::const_itearator cit = my_vector.cbegin(); cit != my_vector.cend(); ++cit)
+         *              std::cout << *cit << " "; // used @c * for primitive type `int`
+         *                                        
+         */
+        constexpr const_iterator cbegin() const noexcept { return const_iterator(m_data); }
+
+
+        /**
+         * @brief Returns an iterator to the element following the last element of the vector.
+         *        This element acts as a placeholder; attempting to access it results in undefined behavior.
+         * @return Iterator to the element following the last element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5});
+         *             
+         *          // print elements
+         *          // `std::vector<Type>::iterator` is the same as `Type*` - look into the object's typedefs
+         * 
+         *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
+         *              std::cout << *it << " "; // used @c * for primitive type `int`
+         * 
+         *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
+         *              *it = 0;                 // modify value
+         */
+        iterator end() noexcept                { return iterator(m_data + m_size); }
+
+        /**
+         * @brief Returns a constant iterator to the element following the last element of the vector.
+         *        This element acts as a placeholder; attempting to access it results in undefined behavior.
+         * @return Constant iterator to the element following the last element of the vector
+         * 
+         * @example const stl::vector<int> my_vector({1, 2, 3, 4, 5});
+         *             
+         *          // `std::vector<Type>::const_iterator` is the same as `const Type*` - look into the object's typedefs
+         *          
+         *          // Using the const @fn cbegin() and @fn cend() which prevents modification
+         *          for (stl::vector<int>::const_itearator cit = my_vector.cbegin(); cit != my_vector.cend(); ++cit)
+         *              std::cout << *cit << " "; // used @c * for primitive type `int`
+         *                                        
+         */
+        constexpr const_iterator cend() const noexcept   { return const_iterator(m_data + m_size); }
+
+         /*################################################## __TO DOCUMENT__ ##################################################*/
+
+        /** FIX STL: ITERATOR (using std::reverse_iterator<Type>) */
+        
+        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size); }
+
+        reverse_iterator rend()                { return reverse_iterator(m_data); }
+
+
+
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size); }
+
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); } 
+
+        /*################################################## __TO DO__ ##################################################*/
 
         /** @returns The number of elements currently present in the vector. */
         constexpr size_type size() const noexcept { return m_size; }
@@ -627,7 +932,7 @@ namespace stl
 
         void swap(vector &payload) noexcept
         {
-            iterator  temp_m_data     = this->m_data;
+            T*        temp_m_data     = this->m_data;
             size_type temp_m_size     = this->m_size;
             size_type temp_m_capacity = this->m_capacity;
 
@@ -681,52 +986,6 @@ namespace stl
             return nullptr;
         }
 
-        reference at(size_type pos) { return m_data[pos]; }
-
-        const_reference at(size_type pos) const { return m_data[pos]; }
-
-        reference front() noexcept { return m_data[0]; }
-
-        reference back() noexcept  { return m_data[m_size - 1]; }
-
-        iterator data() noexcept   { return m_data; }
-
-        iterator begin()                       { return iterator(m_data); }
-
-        const_iterator cbegin() const noexcept { return const_iterator(m_data); }
-
-        iterator end() noexcept                { return iterator(m_data + m_size); }
-
-        const_iterator cend() const noexcept   { return const_iterator(m_data + m_size); }
-
-        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size); }
-
-        reverse_iterator rend()                { return reverse_iterator(m_data); }
-
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size); }
-
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); } 
-
-        reference operator[](size_type index) 
-        { 
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index];
-        }
-
-        const_reference operator[](size_type index) const 
-        {
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index];
-        }
-
-        
-
-        allocator_type get_allocator() const { return m_alloc; }
-
-        
-
     private:
         value_type*    m_data;
         size_type      m_size;
@@ -736,24 +995,64 @@ namespace stl
         constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
     };
 
+    /**
+     * @brief Swaps the contents of lhs and rhs by calling the swap member function.
+     * @param lhs, rhs containers whose contents to swap
+     */
     template <typename T, typename Alloc>
     inline void swap(vector<T, Alloc>& lhs, vector<T, Alloc>& rhs) { lhs.swap(rhs); }
-
+    
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'equal' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the arrays are equal, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator==(const stl::vector<T, Alloc>& lhs, const stl::vector<T, Alloc>& rhs) { return (lhs.size() == rhs.size()) && stl::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin()); }
 
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'equal' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the arrays are not equal, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator!=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs == rhs); }
 
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'lexicographical_compare' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the lhs are lexicographically less than the contents of rhs, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator<(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return stl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()); }
 
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'lexicographical_compare' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the lhs are lexicographically greater than the contents of rhs, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator>(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return rhs < lhs; }
 
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'lexicographical_compare' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the lhs are lexicographically less than or equal to the contents of rhs, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator<=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs > rhs); }
 
+    /**
+     * @brief Lexicographically compares the values of two arrays using the 'lexicographical_compare' function from core.h
+     * @param lhs arrays whose contents to compare
+     * @param rhs arrays whose contents to compare
+     * @return true if the contents of the lhs are lexicographically greater than or equal to the contents of rhs, false otherwise
+     */
     template <typename T, typename Alloc>
     inline bool operator>=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs < rhs); }
 }

@@ -32,10 +32,11 @@
 
 #include "core.h"
 #include "memory.h"
-#include "reverse_iterator.h"
 
 #include <initializer_list>
 #include <stdexcept>
+
+#include <iterator> // stl iterator not working so std::reverse_iterator is used for now
 
 #define OUT_OF_BOUNDS_EXCEPTION   throw std::out_of_range("Index out of bounds!\n");
 #define MEMORY_OVERFLOW_EXCEPTION throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
@@ -71,8 +72,8 @@ namespace stl
         typedef value_type*          iterator;
         typedef const value_type*    const_iterator;
 
-        typedef stl::reverse_iterator<iterator>         reverse_iterator;
-        typedef stl::const_reverse_iterator<iterator>   const_reverse_iterator;
+        typedef std::reverse_iterator<iterator>         reverse_iterator;
+        typedef std::reverse_iterator<iterator>   const_reverse_iterator;
 
         array() noexcept { }
 
@@ -88,14 +89,24 @@ namespace stl
         {
             if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
 
-            memcpy(m_data, init.begin(), __SIZE__);
+            const T* it = init.begin();
+            for (size_type i = 0; i < array_size; ++i)
+            {
+                new(static_cast<void*>(m_data + i)) T(*it);
+                ++it;
+            }
         }
         
         array& operator=(const std::initializer_list<value_type>& init)
         {
             if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
 
-            memcpy(m_data, init.begin(), array_size * META_SIZE);            
+            const T* it = init.begin();
+            for (size_type i = 0; i < array_size; ++i)
+            {
+                new(static_cast<void*>(m_data + i)) T(*it);
+                ++it;
+            }
         }
         
         /** 
@@ -214,7 +225,7 @@ namespace stl
         ~array() = default;
 
     private:
-        value_type m_data[array_size];
+        T m_data[array_size];
     };
 
     /**

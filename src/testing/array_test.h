@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cassert>
 
+#include <array>
+
 static unsigned int COUNT = 0;
 
 #define TEST_CASE(C) { if (!(C)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
@@ -68,14 +70,14 @@ public:
         std::cout << "\n" << COUNT << "/" << N << " passed!\n\n";
     }
 
-    array_container_test(const std::initializer_list<T>& init) : m_array(init), m_il(init) { }
+    constexpr array_container_test(const std::initializer_list<T>& init) noexcept : m_array(init), m_il(init) { }
 
 private:
     bool test_0()
     {
-        stl::array<T, ARRAY_SIZE> expected = m_il;
-
-        for (unsigned int i = 0; i < ARRAY_SIZE; ++i)
+        stl::array<T, ARRAY_SIZE> expected = m_array;
+        
+        for (stl::size_t i = 0; i < ARRAY_SIZE; ++i)
             __check_result_no_return__(m_array[i], expected[i]);
 
         return true;
@@ -85,7 +87,7 @@ private:
     {
         try
         {
-            T result = m_array[index]; 
+            T result = m_array[index];
             __check_result__(result, res);
         }
         catch(const std::out_of_range&) { }     
@@ -155,7 +157,7 @@ private:
     bool test_8()
     {
         stl::array<T, ARRAY_SIZE> aux;
-        aux = m_il;
+        aux = m_array;
 
         for (unsigned int i = 0; i < ARRAY_SIZE; ++i)
             __check_result_no_return__(m_array[i], aux[i]);

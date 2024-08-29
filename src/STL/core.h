@@ -3,6 +3,22 @@
 
 namespace stl
 {
+#if defined(_WIN32) || defined(_WIN64)
+    #if defined(_WIN64)
+        #define ENV 64
+    #else
+        #define ENV 32
+    #endif
+#elif defined(__GNUC__)
+    #if defined(__x86_64__) || defined(__ppc64__)
+        #define ENV 64
+    #else
+        #define ENV 32
+    #endif
+#else
+    #error "Unknown platform"
+#endif
+
     typedef typeof(sizeof(0)) size_t;
 
 #if defined(__x86_64__) || defined(_M_X64)  // 64-bit platform

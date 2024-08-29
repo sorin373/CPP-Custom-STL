@@ -21,100 +21,175 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    @file reverse_iterators.h
+    @file  reverse_iterators.h
 
-    @brief This is part of the standard template libraries (STL) and it is used to implement reverse iterators
+    @brief This is part of the standard template libraries (STL) and it is an iterator adaptor that reverses the direction of a given iterator
  */
 
 #ifndef __REVERSE_ITERATOR_H__
 #define __REVERSE_ITERATOR_H__
 
+#include "core.h"
+
 namespace stl
 {
+    // Base tag for input iterators
+    struct input_iterator_tag {};
+
+    // Base tag for output iterators
+    struct output_iterator_tag {};
+
+    // Forward iterator tag, derived from input_iterator_tag
+    struct forward_iterator_tag : public input_iterator_tag {};
+
+    // Bidirectional iterator tag, derived from forward_iterator_tag
+    struct bidirectional_iterator_tag : public forward_iterator_tag {};
+
+    // Random access iterator tag, derived from bidirectional_iterator_tag
+    struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+
     /**
-     * @brief This is a template for reverse iterators. It helps to go through a block of memory in reverse without changing the order of the elements.
-     * @example for (reverse_iterator<int> it = test.rbegin(); it != test.rend(); it++)
-     * @param T Type of element
+     * @brief Primary template for iterator_traits
+     * @param Iterator Type of iterator
+     * @note  It assumes that the iterator type (`e.g., std::vector<int>::iterator`) defines these types as nested types
+     * 
+     * @typedef `difference_type`    -  type that represents the difference between two iterators
+     * @typedef `value_type`         -  type of the elements pointed to by the iterator
+     * @typedef `pointer`            -  type of a pointer to an element pointed to by the iterator
+     * @typedef `reference`          -  type of a reference to an element pointed to by the iterator
+     * @typedef `iterator_category`  -  category of the iterator `[input / output / forward / bidirectional / random access]`
      */
-    template <typename T> 
-    class reverse_iterator
+    template <typename Iterator>
+    struct iterator_traits
     {
-        typedef T*  iterator;
-        typedef T&  reference;
+        typedef typename Iterator::difference_type     difference_type;
+        typedef typename Iterator::value_type          value_type;
+        typedef typename Iterator::pointer             pointer;
+        typedef typename Iterator::reference           reference;
+        typedef typename Iterator::iterator_category   iterator_category;
+    };
+    
+    /** @brief Partial specialization for raw pointers (`e.g., int*`) */
+    template <typename T>
+    struct iterator_traits<T*>
+    {
+        typedef stl::ptrdiff_t                         difference_type;
+        typedef T                                      value_type;
+        typedef T*                                     pointer;
+        typedef T&                                     reference;
+        typedef random_access_iterator_tag             iterator_category;
+    };
 
-    public:
-        reverse_iterator() = default;
-
-        constexpr explicit reverse_iterator(iterator curr) : current(curr) { }
-
-        constexpr iterator operator->() { return current - 1; }
-
-        constexpr reference operator*() { return *(current - 1); }
-
-        reverse_iterator& operator++()
-        {
-            current--;
-            return *this;
-        }
-
-        reverse_iterator operator++(int)
-        {
-            reverse_iterator temp = *this;
-
-            current--;
-
-            return temp;
-        }
-
-        bool operator==(const reverse_iterator &other) const { return this->current == other.current; }
-
-        bool operator!=(const reverse_iterator &other) const { return this->current != other.current; }
-
-    private:
-        iterator current;
+    /** @brief Partial specialization for raw const pointers (`e.g., const int*`) */
+    template <typename T>
+    struct iterator_traits<const T*>
+    {
+        typedef stl::ptrdiff_t                         difference_type;
+        typedef T                                      value_type;
+        typedef const T*                               pointer;
+        typedef const T&                               reference;
+        typedef random_access_iterator_tag             iterator_category;
     };
 
     /**
-     * @brief This is a template for constant reverse iterators. 
-     *        It helps to go through a block of memory in reverse without modifying the elements or changing their order.
-     * @example for (const_reverse_iterator<int> it = test.crbegin(); it != test.crend(); it++)
-     * @param T Type of element
+     * @brief An iterator adaptor that reverses the direction of a given iterator
+     * @param T Type of iterator to adapt
      */
-    template <typename T> class const_reverse_iterator
+    template <typename T>
+    class reverse_iterator
     {
-        typedef const T*  const_iterator;
-        typedef const T&  const_reference;
+    public: 
+        typedef T                                                           iterator_type;
+        typedef typename stl::iterator_traits<T>::iterator_category         iterator_category;
+        typedef typename stl::iterator_traits<T>::value_type                value_type;
+        typedef typename stl::iterator_traits<T>::difference_type           difference_type;
+        typedef typename stl::iterator_traits<T>::pointer                   pointer;
+        typedef typename stl::iterator_traits<T>::reference                 reference;
 
-    public:
-        const_reverse_iterator() = default;
+        constexpr reverse_iterator() : m_current() { }
 
-        constexpr explicit const_reverse_iterator(const_iterator curr) : current(curr) { }   
+        constexpr explicit reverse_iterator(iterator_type other) : m_current(other) { }
 
-        constexpr const_iterator operator->() const { return current - 1; }
+        template <typename U>
+        constexpr reverse_iterator(const reverse_iterator<U>& other) : m_current(other.m_current) { }
 
-        constexpr const_reference operator*() const { return *(current - 1); }
-
-        const_reverse_iterator& operator++()
+        template <typename U>
+        constexpr reverse_iterator& operator=(const reverse_iterator<U>& other)
         {
-            current--;
+            this->m_current = other.m_current;
             return *this;
         }
 
-        const_reverse_iterator operator++(int)
+        constexpr iterator_type base() const noexcept { return m_current; }
+
+        constexpr reference operator*() const
         {
-            const_reverse_iterator temp = *this;
+            iterator_type temp = m_current;
+            return *(--temp);
+        }
 
-            current--;
+        constexpr pointer operator->() const
+        {
+            iterator_type temp = m_current;
+            --temp;
+            return &(*temp);
+        }
 
+        constexpr reference operator[](difference_type n) const
+        {
+            return *(*this + n);
+        }
+
+        constexpr reverse_iterator& operator++()
+        {
+            --m_current;
+            return *this;
+        }
+
+        constexpr reverse_iterator operator++(int)
+        {
+            reverse_iterator temp = *this;
+            --m_current;
             return temp;
         }
 
-        bool operator==(const const_reverse_iterator &other) { return this->current == other.current; }
+        constexpr reverse_iterator& operator--()
+        {
+            ++m_current;
+            return *this;
+        }
 
-        bool operator!=(const const_reverse_iterator &ohter) { return this->current != ohter.current; }
+        constexpr reverse_iterator operator--(int)
+        {
+            reverse_iterator temp = *this;
+            ++m_current;
+            return temp;
+        }
+
+        constexpr reverse_iterator operator+(difference_type n) const { return reverse_iterator(m_current - n); }
+
+        constexpr reverse_iterator operator-(difference_type n) const { return reverse_iterator(m_current + n); }
+
+        constexpr reverse_iterator& operator+=(difference_type n)
+        {
+            m_current -= n;
+            return *this;
+        }
+
+        constexpr reverse_iterator& operator-=(difference_type n)
+        {
+            m_current += n;
+            return *this;
+        }
+
+        template <typename U>
+        constexpr bool operator==(const reverse_iterator<U>& other) const { return m_current == other.m_current; }
+
+        template <typename U>
+        constexpr bool operator!=(const reverse_iterator<U>& other) const { return m_current != other.m_current; }
 
     private:
-        const_iterator current;
+        iterator_type m_current;
     };
 }
 

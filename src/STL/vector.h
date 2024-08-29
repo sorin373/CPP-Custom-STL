@@ -30,30 +30,13 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
+#include "reverse_iterator.h"
 #include "allocator.h"
 #include "core.h"
 
 #include <initializer_list>
 #include <stdexcept>
 #include <math.h>
-
-#include <iterator> // stl iterator not working so std::reverse_iterator is used for now
-
-#if defined(_WIN32) || defined(_WIN64)
-  #if defined(_WIN64)
-    #define ENV 64
-  #else
-    #define ENV 32
-  #endif
-#elif defined(__GNUC__)
-  #if defined(__x86_64__) || defined(__ppc64__)
-    #define ENV 64
-  #else
-    #define ENV 32
-  #endif
-#else
-  #error "Unknown platform"
-#endif
 
 #define OUT_OF_BOUNDS_EXCEPTION throw std::out_of_range("Index out of bounds!\n");
 #define META_SIZE               sizeof(T)
@@ -83,14 +66,14 @@ namespace stl
         typedef stl::size_t       size_type;
         typedef stl::ptrdiff_t    difference_type;
 
-        typedef T*          iterator;
-        typedef const T*    const_iterator;
+        typedef T*                iterator;
+        typedef const T*          const_iterator;
 
-        typedef T&          reference;
-        typedef const T&    const_reference;
+        typedef T&                reference;
+        typedef const T&          const_reference;
         
-        typedef std::reverse_iterator<iterator>              reverse_iterator;
-        typedef std::reverse_iterator<const_iterator>  const_reverse_iterator;
+        typedef typename stl::reverse_iterator<iterator>              reverse_iterator;
+        typedef typename stl::reverse_iterator<const_iterator>  const_reverse_iterator;
 
         /**********************************
         * MEMBER FUNCTIONS - CONSTRUCTORS *
@@ -642,7 +625,7 @@ namespace stl
          *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
          *              *it = 0;                 // modify value
          */
-        iterator begin() { return iterator(m_data); }
+        iterator begin() noexcept { return iterator(m_data); }
 
         /**
          * @brief Returns a constant iterator to the first element of the vector.
@@ -660,7 +643,6 @@ namespace stl
          */
         constexpr const_iterator cbegin() const noexcept { return const_iterator(m_data); }
 
-
         /**
          * @brief Returns an iterator to the element following the last element of the vector.
          *        This element acts as a placeholder; attempting to access it results in undefined behavior.
@@ -677,7 +659,7 @@ namespace stl
          *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
          *              *it = 0;                 // modify value
          */
-        iterator end() noexcept                { return iterator(m_data + m_size); }
+        iterator end() noexcept { return iterator(m_data + m_size); }
 
         /**
          * @brief Returns a constant iterator to the element following the last element of the vector.
@@ -690,24 +672,65 @@ namespace stl
          *          
          *          // Using the const @fn cbegin() and @fn cend() which prevents modification
          *          for (stl::vector<int>::const_itearator cit = my_vector.cbegin(); cit != my_vector.cend(); ++cit)
-         *              std::cout << *cit << " "; // used @c * for primitive type `int`
-         *                                        
+         *              std::cout << *cit << " "; // used @c * for primitive type `int`                         
          */
-        constexpr const_iterator cend() const noexcept   { return const_iterator(m_data + m_size); }
-
-         /*################################################## __TO DOCUMENT__ ##################################################*/
-
-        /** FIX STL: ITERATOR (using std::reverse_iterator<Type>) */
+        constexpr const_iterator cend() const noexcept { return const_iterator(m_data + m_size); }
         
-        reverse_iterator rbegin()              { return reverse_iterator(m_data + m_size); }
+        /**
+         * @brief  Returns a reverse iterator to the first element of the reversed vector. It corresponds to the last element of the non-reversed vector. 
+         * @note   If the vector is empty, the returned iterator is equal to @fn rend().
+         * @return Reverse iterator to the first element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         * 
+         *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
+         *              std::cout << *rit << " "; // used @c * for primitive type `int`
+         * 
+         *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
+         *              *rit = 0;                 // modify value
+         */
+        reverse_iterator rbegin() noexcept { return reverse_iterator(m_data + m_size); }
+        
+        /**
+         * @brief  Returns a reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
+         *         This element acts as a placeholder, attempting to access it results in undefined behavior. 
+         * @return Reverse iterator to the element following the last element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         * 
+         *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
+         *              std::cout << *rit << " "; // used @c * for primitive type `int`
+         * 
+         *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
+         *              *rit = 0;                 // modify value
+         */
+        reverse_iterator rend() noexcept { return reverse_iterator(m_data); }
 
-        reverse_iterator rend()                { return reverse_iterator(m_data); }
-
-
-
+        /**
+         * @brief  Returns a constant reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
+         *         This element acts as a placeholder, attempting to access it results in undefined behavior. 
+         * @return Constant reverse iterator to the first element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         * 
+         *          // Using the const @fn crbegin() and @fn crend() which prevents modification
+         *          for (stl::vector<int>::reverse_itearator crit = my_vector.rbegin(); crit != my_vector.rend(); ++crit)
+         *              std::cout << *crit << " "; // used @c * for primitive type `int`
+         */
         const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size); }
 
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); } 
+        /**
+         * @brief  Returns a constant reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
+         *         This element acts as a placeholder, attempting to access it results in undefined behavior. 
+         * @return Constant reverse iterator to the element following the last element.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         * 
+         *          // Using the const @fn crbegin() and @fn crend() which prevents modification
+         *          for (stl::vector<int>::reverse_itearator crit = my_vector.rbegin(); crit != my_vector.rend(); ++crit)
+         *              std::cout << *crit << " "; // used @c * for primitive type `int`
+         */
+        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(m_data); } 
 
         /*################################################## __TO DO__ ##################################################*/
 

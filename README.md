@@ -1,33 +1,20 @@
-# CPP-Custom-STL
+# Introduction
 
-- [array.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/array.h)
+This is my custom implementation of the STL containers and other generic utility components. This really helped me understand many concepts which lay behind generic OOP and I hope using this repository people can understand better how STL containers work behind the scenes.
 
-Here’s a brief example demonstrating how to use `stl::array`:
-```C++
-#include "array.h"  // Include the header file for stl::array
-#include <iostream>
+`Note:` For documentation and development I used [cppreference.com](https://en.cppreference.com/w/). Moreover, I do not guarantee that my aproach is standard conformant. My goal was to take the C-style implementations, which I did in high school (C-Style arrays, matrices, strings etc) and try to abstract as much as I could, of course using the std template as an example.
 
-int main() 
-{
-    // Create an array of 100 integers
-    stl::array<int, 100> my_array;
+## Containers
 
-    // Fill the entire array with the value 10
-    my_array.fill(10);
-
-    // Output the first element of the array
-    std::cout << my_array[0] << std::endl;
-
-    return 0;
-}
-```
-
+- [array.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/array.h) 
 - [vector.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/vector.h)
 - [forward_list.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/forward_list.h)
 - [unordered_map.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/unordered_map.h)
 
-## Custom generic implemetations
+## Iterators
 - [reverse_iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/reverse_iterator.h)
-- [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator.h)
 
-More documentation when all STL components are finished :)
+## Other utilities
+- [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator.h)
+- [memory.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/memory.h)
+- [core.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/core.h)

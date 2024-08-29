@@ -32,11 +32,10 @@
 
 #include "core.h"
 #include "memory.h"
+#include "reverse_iterator.h"
 
 #include <initializer_list>
 #include <stdexcept>
-
-#include <iterator> // stl iterator not working so std::reverse_iterator is used for now
 
 #define OUT_OF_BOUNDS_EXCEPTION   throw std::out_of_range("Index out of bounds!\n");
 #define MEMORY_OVERFLOW_EXCEPTION throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
@@ -72,8 +71,8 @@ namespace stl
         typedef value_type*          iterator;
         typedef const value_type*    const_iterator;
 
-        typedef std::reverse_iterator<iterator>         reverse_iterator;
-        typedef std::reverse_iterator<iterator>   const_reverse_iterator;
+        typedef stl::reverse_iterator<iterator>         reverse_iterator;
+        typedef stl::reverse_iterator<iterator>   const_reverse_iterator;
 
         array() noexcept { }
 

@@ -1,5 +1,5 @@
 /**
- * @copyright MIT License
+ *  @copyright MIT License
 
     Copyright (c) 2024 Sorin Tudose
 

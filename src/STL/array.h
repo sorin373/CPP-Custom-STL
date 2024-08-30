@@ -52,8 +52,8 @@ namespace stl
      */
     template <
         typename T, 
-        stl::size_t array_size> 
-    class array
+        stl::size_t array_size
+    > class array
     {
         constexpr static int __SIZE__ = array_size * META_SIZE;
 

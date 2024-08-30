@@ -110,6 +110,8 @@ static void test_vector()
     std::cout << "| Testing the Vector Container  |\n";
     std::cout << "+-------------------------------+\n\n";
 
+    std::cout << "=== INT ===\n\n";
+
     vector_container_test<int> vector_container_int = {
         INT_MIN, 
         2147483000, 
@@ -117,6 +119,8 @@ static void test_vector()
         INT_MAX
     };
     vector_container_int.__TEST__();
+
+    std::cout << "=== DOUBLE ===\n\n";
 
     vector_container_test<double> vector_container_double = {
         1.7976931348623157E+308, 
@@ -126,11 +130,17 @@ static void test_vector()
     };
     vector_container_double.__TEST__();
 
+    std::cout << "=== CHAR ===\n\n";
+
     vector_container_test<char> vector_container_char = {'a', 'b', 'c', 'd'};
     vector_container_char.__TEST__();
 
+    std::cout << "=== BOOL ===\n\n";
+
     vector_container_test<bool> vector_container_bool = {true, false, true, false};
     vector_container_bool.__TEST__();
+
+    std::cout << "=== LONG LONG UNSIGNED INT ===\n\n";
 
     vector_container_test<long long unsigned int> vector_container_long_long({
         100000000000, 
@@ -140,6 +150,8 @@ static void test_vector()
     });
     vector_container_long_long.__TEST__();
 
+    std::cout << "=== COMPLEX | std::complex<double> ===\n\n";
+
     vector_container_test<std::complex<double>> vector_container_complex({
         {1.0, 2.0},
         {3.0, 4.0},
@@ -148,6 +160,7 @@ static void test_vector()
     });
     vector_container_complex.__TEST__();
 
+    std::cout << "=== STRUCT ===\n\n";
     vector_container_test<node> vector_container_struct({
         {true,  2147480000},
         {false, 2147483000},
@@ -159,6 +172,8 @@ static void test_vector()
         {false, INT_MIN}
     });
     vector_container_struct.__TEST__();
+
+    std::cout << "=== 2D VECTOR ===\n\n";
 
     vector_container_test<stl::vector<int>> vector_container_vector({
         {{INT_MIN, -1, 0, 1}},

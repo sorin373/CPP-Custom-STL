@@ -10,7 +10,8 @@
 
 #define __TEST_ALL__    0
 #define __TEST_ARRAY__  0
-#define __TEST_VECTOR__ 1
+#define __TEST_VECTOR__ 0
+#define __TEST_FUNCTIONAL_HASH__ 1
 
 class node 
 {
@@ -186,6 +187,10 @@ static void test_vector()
 
 void INIT_UNIT_TESTS()
 {
+#if __TEST_FUNCTIONAL_HASH__
+    test_hash_naive();
+#endif
+
 #if __TEST_ARRAY__ || __TEST_ALL__
     test_array();
 #endif

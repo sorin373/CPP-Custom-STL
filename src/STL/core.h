@@ -19,7 +19,8 @@ namespace stl
     #error "Unknown platform"
 #endif
 
-    typedef typeof(sizeof(0)) size_t;
+    typedef typeof(sizeof(0))   size_t;
+    typedef unsigned long long	uint64_t;
 
 #if defined(__x86_64__) || defined(_M_X64)  // 64-bit platform
     typedef unsigned long long uintptr_t;

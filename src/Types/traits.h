@@ -214,35 +214,53 @@ namespace stl
     /**
      * @brief  Checks whether @c T is an @c array type.
      * @tparam T a type to check
+     * @note   Helper variable template | Since C++17
      */
     template <typename T>
     constexpr bool is_array_v = is_array<T>::value;
 
 
+    /// @c is_enum
+
     /**
-     *  @todo
-     * 
-     *  is_enum
-     *  is_union
-     *  is_class 
-    */ 
-
-
-    /// 
-
-    ///
-
-    template <typename>
-    struct is_const : public false_type { };
-
+     * @brief  Checks whether @c T is an enumeration type
+     * @tparam T a type to check
+     */
     template <typename T>
-    struct is_const<const T> : public true_type { };
-    
-    template <typename>
-    struct is_volatile : public false_type { };
-    
+    struct is_enum : public integral_constant<bool, __is_enum(T)> { };
+
+    // Helper variable template | Since C++17
     template <typename T>
-    struct is_volatile<volatile T> : public true_type { };
+    constexpr bool is_enum_v = is_enum<T>::value;
+
+
+    /// @c is_union
+
+    /**
+     * @brief  Checks whether @c T is a union type
+     * @tparam T a type to check
+     */
+    template <typename T>
+    struct is_union : public integral_constant<bool, __is_union(T)> { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_union_v = is_union<T>::value;
+
+    
+    /// @c is_class
+
+    /**
+     * @brief  Checks whether @c T is a @c non-union class type
+     * @tparam T a type to check
+     */
+    template <typename T>
+    struct is_class : public integral_constant<bool, __is_class(T)> { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_class_v = is_class<T>::value;
+
 
     /// @c is_function
 
@@ -284,27 +302,124 @@ namespace stl
     template <typename T>
     constexpr bool is_function_v = is_function<T>::value;
 
+
+    /// @c is_pointer
+
+    template <typename>
+    struct is_pointer_helper : public false_type { };
+
+    template <typename T>
+    struct is_pointer_helper<T*> : public true_type { };
+
     /**
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     * 
-     *          @todo 
-     * 
-     * 
-     * 
-     * 
-     * 
+     * @brief  Checks whether @c T is a pointer to @c object or @c function (including pointer to @b void, but excluding pointer to member)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_pointer : public is_pointer_helper<typename remove_cv<T>::type>::type { }; 
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_pointer_v = is_pointer<T>::value;
+
+
+    /// @c is_lvalue_reference
+
+    template <typename>
+    struct is_lvalue_reference : public false_type { };
+    
+    template <typename T>
+    struct is_lvalue_reference<T&> : public true_type { };
+
+    /**
+     * @brief  Checks whether @c T is an @c lvalue reference type
+     * @tparam T a type to check 
+     * @note   Helper variable template | Since C++17
+     */
+    template <typename T>
+    constexpr bool is_lvalue_reference_v = is_lvalue_reference<T>::value;
+
+
+    /// @c is_rvalue_reference
+
+    template <typename>
+    struct is_rvalue_reference : public false_type { };
+
+    template <typename T>
+    struct is_rvalue_reference<T&&> : public true_type { };
+
+    /**
+     * @brief  Checks whether @c T is an @c rvalue reference type
+     * @tparam T a type to check 
+     * @note   Helper variable template | Since C++17
+     */
+    template <typename T>
+    constexpr bool is_rvalue_reference_v = is_rvalue_reference<T>::value;
+
+
+    /// @c is_member_object_pointer
+
+    template <typename>
+    struct is_member_object_pointer_helper : public false_type { };
+
+    template <typename T, typename C>
+    struct is_member_object_pointer_helper<T C::*> : public integral_constant<bool, !is_function<T>::value> { };
+
+    /**
+     * @brief  Checks whether @c T is a non-static member object pointer
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_member_object_pointer : public is_member_object_pointer_helper<typename remove_cv<T>::type>::type { };
+    
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_member_object_pointer_v = is_member_object_pointer<T>::value;
+
+
+    /// @c is_member_function_pointer
+
+    template <typename>
+    struct is_member_function_pointer_helper : public false_type { };
+
+    template <typename T, typename C>
+    struct is_member_function_pointer_helper<T C::*> : public integral_constant<bool, is_function<T>::value> { };
+
+    /**
+     * @brief  Checks whether @c T is a non-static member function pointer
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_member_function_pointer : public is_member_function_pointer_helper<typename remove_cv<T>::type>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_member_function_pointer_v = is_member_function_pointer<T>::value;
+
+    /**
+     * ***********************************************
+     *          @b DONE + @b TESTED <<<<=            *
+     *          @todo =>>>>                          *
+     * ***********************************************
      */
 
 
+    ///
+
+    template <typename>
+    struct is_const : public false_type { };
+
+    template <typename T>
+    struct is_const<const T> : public true_type { };
+    
+    template <typename>
+    struct is_volatile : public false_type { };
+    
+    template <typename T>
+    struct is_volatile<volatile T> : public true_type { };
 
 
-
-    /// 
+    ////
     
     template <bool, typename, typename>
     struct conditional;
@@ -375,46 +490,15 @@ namespace stl
 
 
 
-    
-
-
-
-    //
-
 
 
     //
 
-    template <typename>
-    struct is_pointer_helper : public false_type { };
 
-    template <typename T>
-    struct is_pointer_helper<T*> : public true_type { };
-
-    template <typename T>
-    struct is_pointer : public is_pointer_helper<typename remove_cv<T>::type>::type { }; 
-
-    //
-
-    template <typename>
-    struct is_lvalue_reference : public false_type { };
-
-    template <typename T>
-    struct is_lvalue_reference<T&> : public true_type { };
-
-    //
-
-    template <typename>
-    struct is_rvalue_reference : public false_type { };
-
-    template <typename T>
-    struct is_rvalue_reference<T&&> : public true_type { };
 
     //
 
     
-
-    /** @todo Complete is_function */
 
     //
 

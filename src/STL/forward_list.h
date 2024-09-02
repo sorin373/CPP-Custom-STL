@@ -1,9 +1,8 @@
 #ifndef __FORWARD_LIST_H__
 #define __FORWARD_LIST_H__
 
-#include "../memory/memory.h"
-
 #include <initializer_list>
+#include <cstring>
 
 namespace stl
 {
@@ -141,6 +140,11 @@ namespace stl
             }
         }
 
+        void clear()
+        {
+            
+        }
+
         iterator begin() const noexcept        { return iterator(this->m_head); }
 
         const_iterator cbegin() const noexcept { return const_iterator(this->m_head); }
@@ -208,22 +212,6 @@ namespace stl
             for (const_iterator it = list.cbegin(); it != list.cend(); it++)
                 push_front(*it);
         }
-
-#if (DEBUG)
-        void print_list() const noexcept
-        {
-            node_iterator it = this->m_head;
-
-            while (it != nullptr)
-            {
-                std::cout << it->get_m_data() << " ";
-
-                it = it->m_next;
-            }
-
-            std::cout << std::endl;
-        }
-#endif
 
         ~forward_list()
         {

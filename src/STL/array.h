@@ -47,8 +47,8 @@ namespace stl
     /**
      * @brief This is a container that encapsulates fixed size arrays.
      * 
-     * @param T          Type of element
-     * @param array_size The fixed no. of elements that the array can have
+     * @tparam T          Type of element
+     * @tparam array_size The fixed no. of elements that the array can have
      */
     template <
         typename T, 

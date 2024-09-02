@@ -145,14 +145,14 @@ namespace stl
         return static_cast<size_t>(hash_value);
     }
 
-    #define cxx_hashtable_define_trivial_hash(T)       \
-    template <>                                        \
-    struct hash<T> : public hash_base<stl::size_t, T>  \
-    {                                                  \
-        stl::size_t operator()(T value) const noexcept \
-        {                                              \
-            return stl_hash_string(value);             \
-        }                                              \
+    #define cxx_hashtable_define_trivial_hash(T)  \
+    template <>                                   \
+    struct hash<T> : public hash_base<size_t, T>  \
+    {                                             \
+        size_t operator()(T value) const noexcept \
+        {                                         \
+            return stl_hash_string(value);        \
+        }                                         \
     };
 
     cxx_hashtable_define_trivial_hash(char*)
@@ -161,4 +161,4 @@ namespace stl
     #undef cxx_hashtable_define_trivial_hash
 }
 
-#endif
+#endif // HASH_H

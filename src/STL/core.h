@@ -1,35 +1,10 @@
 #ifndef __CORE_H__
 #define __CORE_H__
 
+#include "../Types/traits.h"
+
 namespace stl
 {
-#if defined(_WIN32) || defined(_WIN64)
-    #if defined(_WIN64)
-        #define ENV 64
-    #else
-        #define ENV 32
-    #endif
-#elif defined(__GNUC__)
-    #if defined(__x86_64__) || defined(__ppc64__)
-        #define ENV 64
-    #else
-        #define ENV 32
-    #endif
-#else
-    #error "Unknown platform"
-#endif
-
-    typedef typeof(sizeof(0))   size_t;
-    typedef unsigned long long	uint64_t;
-
-#if defined(__x86_64__) || defined(_M_X64)  // 64-bit platform
-    typedef unsigned long long uintptr_t;
-#elif defined(__i386__) || defined(_M_IX86) // 32-bit platform
-    typedef unsigned int uintptr_t;
-#endif
-
-    typedef decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr)) ptrdiff_t;
-
     template <typename ItTypeI, typename ItTypeII>
     inline bool equal(ItTypeI lhs, ItTypeI lhs_end, ItTypeII rhs)
     {

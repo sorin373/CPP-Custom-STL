@@ -18,8 +18,8 @@ namespace stl
 }
 
 /**
- * XOR bit operation 
- * 
+   XOR bit operation 
+  
    BIT A |  BIT B |   A XOR B
    0	 |  0	  |   0
    0	 |  1	  |   1

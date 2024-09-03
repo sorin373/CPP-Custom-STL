@@ -65,10 +65,54 @@ namespace stl
     using bool_constant = integral_constant<bool, B>;
 
 
-    /// Primary type categories
+    /** ##################################
+    #  @b Meta_programming_helper_types  #
+    ####################################*/
 
-    //
+    template <bool B, typename T, typename F>
+    struct conditional { typedef T type; };
 
+    template <typename T, typename F>
+    struct conditional<false, T, F> { typedef F type; };
+
+    template <bool B, typename T, typename F>
+    using conditional_t = typename conditional<B, T, F>::type;
+
+    /// These templates are used to compute logical @c OR (__or_) and logical @c AND (__and_)
+
+    template <typename...> struct __or_;
+    template <typename...> struct __and_;
+
+    template <> struct __or_<> : public false_type { };
+
+    template <typename booleanT>
+    struct __or_<booleanT> : public booleanT { };
+
+    template <typename booleanT1, typename booleanT2>
+    struct __or_<booleanT1, booleanT2> : public conditional<booleanT1::value, booleanT1, booleanT2>::type { };
+
+    template <typename booleanT1, typename booleanT2, typename booleanT3, typename... booleanTn>
+    struct __or_<booleanT1, booleanT2, booleanT3, booleanTn...> : public conditional<booleanT1::value, booleanT1, __or_<booleanT2, booleanT3, booleanTn...>>::type { };
+
+    template <> struct __and_ <> : public true_type { };
+
+    template <typename booleanT>
+    struct __and_<booleanT> : public booleanT { };
+
+    template <typename booleanT1, typename booleanT2>
+    struct __and_<booleanT1, booleanT2> : public conditional<booleanT1::value, booleanT2, booleanT1>::type { };
+
+    template <typename booleanT1, typename booleanT2, typename booleanT3, typename... booleanTn>
+    struct __and_<booleanT1, booleanT2, booleanT3, booleanTn...> : public conditional<booleanT1::value, booleanT1, __and_<booleanT2, booleanT3, booleanTn...>>::type { };
+
+    template <typename booleanT>
+    struct __not_ : public integral_constant<bool, !booleanT::value> { };
+
+
+    /** ################################
+    #  @b Const-volatility_specifiers  #
+    ##################################*/
+    
     template <typename T>
     struct remove_const { typedef T type; };
 
@@ -81,7 +125,7 @@ namespace stl
     template <typename T>
     struct remove_volatile<volatile T> { typedef T type; };
 
-    //
+    ///
 
     template <typename>
     struct remove_cv;
@@ -89,8 +133,8 @@ namespace stl
     template <typename T>
     struct remove_cv { typedef typename remove_const<typename remove_volatile<T>::type>::type type; };
 
-    //
-    
+
+    /// Primary type categories
 
     /// @c is_void
 
@@ -396,6 +440,134 @@ namespace stl
     template <typename T>
     constexpr bool is_member_function_pointer_v = is_member_function_pointer<T>::value;
 
+
+    /** ##############################
+    #  @b Composite_type_categories  #
+    ################################*/
+
+
+    /// @c is_reference
+
+    /**
+     * @brief  Checks if @c T is a reference type (lvalue reference or rvalue reference)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_reference : public __or_<is_lvalue_reference<T>, is_rvalue_reference<T>>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_reference_v = is_reference<T>::value;
+
+
+    /// @c is_arithmetic
+
+    /**
+     * @brief  If T is an arithmetic type (that is, an `integral` type or a `floating-point` type)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_arithmetic : public __or_<is_integral<T>, is_floating_point<T>>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
+
+
+    /// @c is_fundamental
+
+    /**
+     * @brief  If @c T is a fundamental type (that is, `arithmetic` type, `void`, or `nullptr_t`)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_fundamental : public __or_<is_arithmetic<T>, is_void<T>, is_null_pointer<T>>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_fundamental_v = is_fundamental<T>::value;
+
+
+    /// @c is_object
+
+    /** 
+     * @brief  If @c T is an object type (that is any possibly cv-qualified type other than `function`, `reference`, or `void` types)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_object : public __not_<__or_<is_function<T>, is_reference<T>, is_void<T>>>::type { };
+    
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_object_v = is_object<T>::value;
+
+
+    /// @c is_scalar
+
+    /**
+     * @brief  If @c T is a scalar type, provides the member constant value equal true
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_scalar : public __or_<is_arithmetic<T>, is_enum<T>, is_pointer<T>, 
+                                    is_member_object_pointer<T>, is_null_pointer<T>>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_scalar_v = is_scalar<T>::value;
+
+
+    /// @c is_compound
+    
+    /**
+     * @brief  If @c T is a compound type (that is, 
+     * 
+     *           `array`, `function`, `object pointer`, `function pointer`, `member object pointer`, 
+     *           `member function pointer`, `reference`, `class`, `union`, or `enumeration`, 
+     * 
+     *         including any cv-qualified variants)
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_compound : public integral_constant<bool, !is_fundamental<T>::value> { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_compound_v = is_compound<T>::value;
+
+
+    /// @c is_member_pointer
+
+    template <typename T>
+    struct is_member_pointer_helper : public false_type { };
+
+    template <typename T, typename C>
+    struct is_member_pointer_helper<T C::*> : public true_type { };
+
+    /**
+     * @brief  Checks if @c T is pointer to non-static member object or a pointer to non-static member function
+     * @tparam T a type to check 
+     */
+    template <typename T>
+    struct is_member_pointer : public is_member_pointer_helper<typename remove_cv<T>::type>::type { };
+
+    // Helper variable template | Since C++17
+    template <typename T>
+    constexpr bool is_member_pointer_v = is_member_pointer<T>::value;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * ***********************************************
      *          @b DONE + @b TESTED <<<<=            *
@@ -421,57 +593,6 @@ namespace stl
 
     ////
     
-    template <bool, typename, typename>
-    struct conditional;
-
-    template <bool B, typename T, typename F>
-    struct conditional { typedef T type; };
-
-    template <typename T, typename F>
-    struct conditional<false, T, F> { typedef F type; };
-
-    template <bool B, typename T, typename F>
-    using conditional_t = typename conditional<B, T, F>::type;
-
-    template <typename...>
-    struct __or_;
-
-    template <>
-    struct __or_<> : public false_type { };
-
-    template <typename booleanT>
-    struct __or_<booleanT> : public booleanT { };
-
-    template <typename booleanT1, typename booleanT2>
-    struct __or_<booleanT1, booleanT2> : public conditional<booleanT1::value, booleanT1, booleanT2>::type { };
-
-    template <typename booleanT1, typename booleanT2, typename booleanT3, typename... booleanTn>
-    struct __or_<booleanT1, booleanT2, booleanT3, booleanTn...> : public conditional<booleanT1::value, booleanT1, __or_<booleanT2, booleanT3, booleanTn...>>::type { };
-
-    // 
-
-    template <typename...>
-    struct __and_;
-
-    template <>
-    struct __and_ <> : public true_type { };
-
-    template <typename booleanT>
-    struct __and_<booleanT> : public booleanT { };
-
-    template <typename booleanT1, typename booleanT2>
-    struct __and_<booleanT1, booleanT2> : public conditional<booleanT1::value, booleanT2, booleanT1>::type { };
-
-    template <typename booleanT1, typename booleanT2, typename booleanT3, typename... booleanTn>
-    struct __and_<booleanT1, booleanT2, booleanT3, booleanTn...> : public conditional<booleanT1::value, booleanT1, __and_<booleanT2, booleanT3, booleanTn...>>::type { };
-        
-    //
-
-    template <typename booleanT>
-    struct __not_ : public integral_constant<bool, !booleanT::value> { };
-
-    //
-
     struct nonesuch
     {
         nonesuch() = delete;
@@ -488,29 +609,7 @@ namespace stl
     
     struct failure_type { };
 
-
-
-
-
-    //
-
-
-
-    //
-
-    
-
-    //
-
-    template <typename T>
-    struct is_reference : public __or_<is_lvalue_reference<T>, is_rvalue_reference<T>>::value { };
-
-    //
-
-    template <typename T>
-    struct is_object : public __not_<__or_<is_function<T>, is_reference<T>, is_void<T>>>::type { };
-
-    //
+    ////
 
     template <typename...>
     struct _void_t { typedef void type; };

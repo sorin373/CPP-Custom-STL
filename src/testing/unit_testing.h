@@ -8,10 +8,11 @@
 #define INT_MAX		2147483647
 #define INT_MIN		(-INT_MAX-1)
 
-#define __TEST_ALL__    0
-#define __TEST_ARRAY__  0
-#define __TEST_VECTOR__ 0
-#define __TEST_FUNCTIONAL_HASH__ 1
+#define __TEST_ALL__             0 
+#define __TEST_ARRAY__           0 
+#define __TEST_VECTOR__          0
+
+#define __TEST_FUNCTIONAL_HASH__ 0
 
 class node 
 {
@@ -77,10 +78,10 @@ static void test_array()
     array_container_bool.__TEST__();
 
     array_container_test<stl::array<int, __ARRAY_SIZE__>, __ARRAY_SIZE__> array_container_array({
-        {{INT_MIN, -1, 0, 1}},
-        {{100, 1000, 10000, 100000}},
-        {{1000000, 2000000, 3000000, 4000000}},
-        {{2147483644, 2147483645, 2147483646, INT_MAX}}
+        {INT_MIN, -1, 0, 1},
+        {100, 1000, 10000, 100000},
+        {1000000, 2000000, 3000000, 4000000},
+        {2147483644, 2147483645, 2147483646, INT_MAX}
     });
     array_container_array.__TEST__();
 
@@ -177,16 +178,18 @@ static void test_vector()
     std::cout << "=== 2D VECTOR ===\n\n";
 
     vector_container_test<stl::vector<int>> vector_container_vector({
-        {{INT_MIN, -1, 0, 1}},
-        {{100, 1000, 10000, 100000}},
-        {{1000000, 2000000, 3000000, 4000000}},
-        {{2147483644, 2147483645, 2147483646, INT_MAX}}
+        {INT_MIN, -1, 0, 1},
+        {100, 1000, 10000, 100000},
+        {1000000, 2000000, 3000000, 4000000},
+        {2147483644, 2147483645, 2147483646, INT_MAX}
     });
     vector_container_vector.__TEST__();
 }
 
 void INIT_UNIT_TESTS()
 {
+    traits_test::__TEST__();
+
 #if __TEST_FUNCTIONAL_HASH__
     test_hash_naive();
 #endif

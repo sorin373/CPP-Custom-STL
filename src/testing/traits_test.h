@@ -265,12 +265,12 @@ namespace traits_test
     class lvrA { };
 
     static_assert(
-        stl::is_lvalue_reference_v<lvrA> == false &&
-        stl::is_lvalue_reference_v<lvrA&> == true &&
+        stl::is_lvalue_reference_v<lvrA>   == false &&
+        stl::is_lvalue_reference_v<lvrA&>  == true  &&
         stl::is_lvalue_reference_v<lvrA&&> == false &&
-        stl::is_lvalue_reference_v<int> == false &&
-        stl::is_lvalue_reference_v<int&> == true &&
-        stl::is_lvalue_reference_v<int&&> == false
+        stl::is_lvalue_reference_v<int>    == false &&
+        stl::is_lvalue_reference_v<int&>   == true  &&
+        stl::is_lvalue_reference_v<int&&>  == false
     );
 
 
@@ -279,11 +279,11 @@ namespace traits_test
     class rvrA { }; 
 
     static_assert(
-        stl::is_rvalue_reference_v<rvrA> == false &&
-        stl::is_rvalue_reference_v<rvrA&> == false &&
-        stl::is_rvalue_reference_v<rvrA&&> == true &&
-        stl::is_rvalue_reference_v<char> == false &&
-        stl::is_rvalue_reference_v<char&> == false &&
+        stl::is_rvalue_reference_v<rvrA>   == false &&
+        stl::is_rvalue_reference_v<rvrA&>  == false &&
+        stl::is_rvalue_reference_v<rvrA&&> == true  &&
+        stl::is_rvalue_reference_v<char>   == false &&
+        stl::is_rvalue_reference_v<char&>  == false &&
         stl::is_rvalue_reference_v<char&&> == true
     );
 
@@ -293,9 +293,9 @@ namespace traits_test
         void test(T&& v)
         {
             std::cout << std::boolalpha;
-            std::cout << "T: " << stl::is_rvalue_reference_v<T> << std::endl;
-            std::cout << "T&&: " << stl::is_rvalue_reference_v<T&&> << std::endl;
-            std::cout << "decltype(x): " << stl::is_rvalue_reference_v<decltype(v)> << std::endl;
+            std::cout << "T ?: " << stl::is_rvalue_reference_v<T> << std::endl;
+            std::cout << "T&& ?: " << stl::is_rvalue_reference_v<T&&> << std::endl;
+            std::cout << "decltype(x) ?: " << stl::is_rvalue_reference_v<decltype(v)> << std::endl;
             std::cout << std::noboolalpha;
         }
     }
@@ -322,6 +322,128 @@ namespace traits_test
     static_assert(stl::is_member_function_pointer<decltype(&A2::member)>::value == true);
 
 
+    /// @c is_reference
+
+    static_assert(
+        stl::is_reference_v<A>         == false &&
+        stl::is_reference_v<A&>        == true  && 
+        stl::is_reference_v<A&&>       == true  &&
+        stl::is_reference_v<long>      == false &&
+        stl::is_reference_v<long&>     == true  &&
+        stl::is_reference_v<long&&>    == true  &&
+        stl::is_reference_v<double*>   == false &&
+        stl::is_reference_v<double*&>  == true  &&
+        stl::is_reference_v<double*&&> == true
+    );
+
+    static_assert(
+        stl::is_reference<A>::value         == false &&
+        stl::is_reference<A&>::value        == true  && 
+        stl::is_reference<A&&>::value       == true  &&
+        stl::is_reference<long>::value      == false &&
+        stl::is_reference<long&>::value     == true  &&
+        stl::is_reference<long&&>::value    == true  &&
+        stl::is_reference<double*>::value   == false &&
+        stl::is_reference<double*&>::value  == true  &&
+        stl::is_reference<double*&&>::value == true
+    );
+
+
+    /// @c is_arithmetic
+
+    enum class eB : int { e };
+
+    static_assert(
+        stl::is_arithmetic_v<bool>            == true  &&
+        stl::is_arithmetic_v<char>            == true  &&
+        stl::is_arithmetic_v<char const>      == true  &&
+        stl::is_arithmetic_v<int>             == true  &&  
+        stl::is_arithmetic_v<int const>       == true  &&
+        stl::is_arithmetic_v<float>           == true  &&
+        stl::is_arithmetic_v<float const>     == true  &&
+        stl::is_arithmetic_v<stl::size_t>     == true  &&
+
+        stl::is_arithmetic_v<char&>           == false &&
+        stl::is_arithmetic_v<char*>           == false &&
+        stl::is_arithmetic_v<int&>            == false &&
+        stl::is_arithmetic_v<int*>            == false &&
+        stl::is_arithmetic_v<float&>          == false &&
+        stl::is_arithmetic_v<float*>          == false &&
+        stl::is_arithmetic_v<A>               == false &&
+        stl::is_arithmetic_v<B>               == false &&
+        stl::is_arithmetic_v<decltype(eB::e)> == false
+        // stl::is_arithmetic_v<std::byte>       == false &&
+        // stl::is_arithmetic_v<std::atomic_int> == false
+    );
+
+
+    /// @c is_fundamental
+
+    static_assert(
+        stl::is_fundamental_v<int>                                == true  &&
+        stl::is_fundamental_v<int&>                               == false &&
+        stl::is_fundamental_v<int*>                               == false &&
+        stl::is_fundamental_v<void>                               == true  &&
+        stl::is_fundamental_v<void*>                              == false &&
+        stl::is_fundamental_v<float>                              == true  &&
+        stl::is_fundamental_v<float&>                             == false &&
+        stl::is_fundamental_v<float*>                             == false &&
+        stl::is_fundamental_v<stl::nullptr_t>                     == true  &&
+        stl::is_fundamental_v<stl::is_fundamental<int>>           == false &&
+        stl::is_fundamental_v<A>                                  == false &&
+        stl::is_fundamental_v<stl::is_fundamental<A>::value_type> == true
+    );
+
+
+    /// @c is_object
+
+    static_assert(
+        stl::is_object_v<void>     == false &&
+        stl::is_object_v<int>      == true  &&
+        stl::is_object_v<int&>     == false &&
+        stl::is_object_v<int*>     == true  &&
+        stl::is_object_v<int*&>    == false &&
+        stl::is_object_v<A>        == true  &&
+        stl::is_object_v<A&>       == false &&
+        stl::is_object_v<A*>       == true  &&
+        stl::is_object_v<int()>    == false &&
+        stl::is_object_v<int(*)()> == true  &&
+        stl::is_object_v<int(&)()> == false
+    );
+
+
+    /// @c is_scalar
+
+    struct S { int m; } s;
+
+    static_assert(
+        stl::is_scalar_v<int>            == true &&
+        stl::is_scalar_v<double>         == true &&
+        stl::is_scalar_v<E1>             == true &&
+        stl::is_scalar_v<const char*>    == true &&
+        stl::is_scalar_v<stl::nullptr_t> == true &&
+        stl::is_scalar_v<S>              == false
+    );
+
+
+    /// @c is_compound
+
+    static_assert(
+        stl::is_compound_v<int>          == false &&
+        stl::is_compound_v<int*>         == true  &&
+        stl::is_compound_v<int&>         == true  && 
+        stl::is_compound_v<decltype(f)>  == true  &&
+        stl::is_compound_v<decltype(&f)> == true
+    );
+
+
+    /// @c is_member_pointer
+
+    class cls { };
+    static_assert(
+        stl::is_member_pointer_v<int(cls::*)> == true  &&
+        stl::is_member_pointer_v<int>         == false
+    );
 
     // main testing function
     void __TEST__() 

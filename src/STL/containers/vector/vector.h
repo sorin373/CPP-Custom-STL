@@ -30,9 +30,9 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
 
-#include "reverse_iterator.h"
-#include "allocator.h"
-#include "core.h"
+#include "../../reverse_iterator.h"
+#include "../../allocator/allocator.h"
+#include "../../algorithm/algorithm.h"
 
 #include <initializer_list>
 #include <stdexcept>
@@ -42,24 +42,97 @@
 
 namespace stl
 {
+
+    // template <typename T, typename Alloc>
+    // struct vector_base
+    // {
+    //     typedef typename Alloc::template rebind<T>::other T_alloc_type;
+    //     typedef T_alloc_type::pointer                     pointer;
+
+    //     typedef Alloc                                     allocator_type;
+
+    //     struct vector_impl : public T_alloc_type
+    //     {
+    //         pointer m_start;
+    //         pointer m_finish;
+    //         pointer m_end_of_storage;
+
+    //         vector_impl() : T_alloc_type(), m_start(), m_finish(), m_end_of_storage() { }
+
+    //         vector_impl(const T_alloc_type& alloc) noexcept : T_alloc_type(alloc), m_start(), m_finish(), m_end_of_storage() { }
+
+    //         void m_swap_data(vector_impl& other) noexcept
+    //         {
+    //             stl::swap(this->m_start, other.m_start);
+    //             stl::swap(this->m_finish, other.m_finish);
+    //             stl::swap(this->m_end_of_storage, other.m_end_of_storage);
+    //         }
+    //     }; 
+
+    //     vector_impl m_impl;
+
+    //     allocator_type get_allocator() const noexcept { return allocator_type(m_get_T_allocator); }
+
+    //     vector_base() : m_impl() { }
+
+    //     vector_base(const allocator_type& alloc) noexcept : m_impl(alloc) { }
+
+    //     vector_base(size_t size) : m_impl() { m_create_storage(size); }
+
+    //     vector_base(size_t size, const allocator_type& alloc) : m_impl(alloc) { m_create_storage(size); }
+
+    //     pointer m_allocate(pointer ptr, size_t size)
+    //     {
+    //         return size != 0 ? m_get_T_allocator().allocate(size) : pointer();
+    //     }
+
+    //     void m_deallocate(pointer ptr, size_t size)
+    //     {
+    //         if (ptr)
+    //              m_get_T_allocator().deallocate(ptr, size); // did not use traits ()
+    //     }
+
+    //     ~vector_base() noexcept
+    //     {
+    //         m_deallocate(this->m_impl.m_start,
+    //                      this->m_impl.m_end_of_storage - this->m_impl.m_start);
+    //     }
+
+    // private:    
+    //     T_alloc_type& m_get_T_allocator() noexcept { return *static_cast<T_alloc_type*>(&this->m_impl); }
+
+    //     const T_alloc_type& m_get_T_allocator() const noexcept { return *static_cast<const T_alloc_type*>(&this->m_impl); }
+
+    //     void m_create_storage(size_t size)
+    //     {
+    //         this->m_impl.m_start = this->m_allocate(size);
+    //         this->m_impl.m_finish = this->m_impl.m_start;
+    //         this->m_impl.m_end_of_storage = this->m_impl.m_start + size;
+    //     }
+    // };
+
+
     /**
      *  @brief %vector (STL) container (a dynamic C-style array). It adds extra functionalites to the basic CPP arrays, by resizing the memory when necessary.
      *         In addition it consists in many member functions that help the user manage the array data faster and more efficiently. 
      *         Subscripting ( @c [] ) access is also provided as with C-style arrays.
-     *  @param T The type of the elements. @param Allocator An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory.
+     *  @tparam T The type of the elements. @tparam Allocator An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory.
      */
     template <
         typename T, 
         typename Allocator = allocator<T>
     > class vector
     {
-    public:
-
         /***************
         * MEMBER TYPES *
         ***************/
+    
+        // typedef vector_base<T, Allocator>     Base;
+        // typedef typename Base::T_alloc_type   T_alloc_type;
 
+    public:
         typedef T                 value_type;
+        // typedef Base::pointer     pointer;
         typedef Allocator         allocator_type;
         typedef stl::size_t       size_type;
         typedef stl::ptrdiff_t    difference_type;
@@ -72,6 +145,14 @@ namespace stl
         
         typedef typename stl::reverse_iterator<iterator>              reverse_iterator;
         typedef typename stl::reverse_iterator<const_iterator>  const_reverse_iterator;
+
+    // protected:
+    //     using Base::m_allocate;
+    //     using Base::m_deallocate;
+    //     using Base::m_impl;
+    //     using Base::m_get_T_allocator;
+
+    public:
 
         /**********************************
         * MEMBER FUNCTIONS - CONSTRUCTORS *
@@ -126,6 +207,17 @@ namespace stl
                 }
             }
         }
+
+        // explicit vector(size_type count, const Allocator& alloc = Allocator())
+        // {
+
+        // }
+
+        // template <typename InputIt, typename = RequireInIterator<InputIt>>
+        // vector(InputIt first, InputIt last, const Allocator& alloc = Allocator())
+        // {
+
+        // }
 
         /**
          * @brief Constructs the container using an initializer list
@@ -270,25 +362,7 @@ namespace stl
          * @example stl::vector<int> x({1, 2, 3, 4}), y, z;
          *          y = x;
          */
-        vector& operator=(const vector& other) 
-        { 
-            if (this != &other)
-            {
-                if (m_data != nullptr)
-                    m_alloc.deallocate(m_data, m_capacity);
-
-                m_capacity = other.capacity();
-                m_size     = other.size();
-                m_alloc    = other.get_allocator();
-
-                m_data = m_alloc.allocate(m_size);
-
-                for (size_type i = 0; i < m_size; ++i)
-                    m_alloc.construct(m_data + i, other[i]);
-            }
-
-            return *this;
-        }
+        vector& operator=(const vector& other);
 
         /**
          * @brief Replaces the contents with those identified by initializer list `init`
@@ -300,28 +374,7 @@ namespace stl
          * 
          *          y = x;
          */
-        vector& operator=(const std::initializer_list<T> init)
-        {
-            if (m_data != nullptr)
-            {
-                for (size_type i = 0; i < m_size; ++i)
-                    m_alloc.destroy(m_data + i);
-
-                m_alloc.deallocate(m_data, m_capacity);
-            }
-
-            m_capacity = m_size = init.size();
-
-            m_data = m_alloc.allocate(m_size);
-
-            const value_type* it = init.begin();
-
-            for (size_type i = 0; i < m_size; ++i)
-            {
-                m_alloc.construct(m_data + i, *it);
-                ++it;
-            }
-        }
+        vector& operator=(const std::initializer_list<T> init);
 
         /**
          * @brief Replaces the contents with `size` copies of value `value`
@@ -370,6 +423,7 @@ namespace stl
 
         /**
          * @brief Replaces the contents with copies of those in the range [`first`, `last`).
+         * @tparam InputIt
          * @param first begining iterator @param last end iterator
          * 
          * @example const std::string extra(6, 'b');
@@ -379,7 +433,7 @@ namespace stl
          * 
          * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
          */
-        template <typename InputIt>
+        template <typename InputIt, typename = stl::RequireInIterator<InputIt>>
         void assign(InputIt first, InputIt last)
         {
             if (first == nullptr || last == nullptr)
@@ -821,7 +875,7 @@ namespace stl
 
             m_capacity = m_size;
 
-            memcpy(temp_ptr, m_data, m_capacity * META_SIZE);
+            stl::memcpy(temp_ptr, m_data, m_capacity * META_SIZE);
 
             m_alloc.deallocate(m_data, m_capacity);
 
@@ -863,53 +917,79 @@ namespace stl
          * @brief  inserts a copy of value before pos.
          * @param  iterator before which the content will be inserted (pos may be the @c end() iterator) @param value element to insert
          * @return iterator pointing to the inserted value.
+         * 
+         * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
+         *          auto pos = my_vector.begin();
+         *          
+         *          pos = my_vector.insert(pos, 99); 
+         * 
+         *          for (stl::size_t i = 0; i < 6; ++i)
+         *              std::cout << my_vector[i] << " ";   // {99, 1, 2, 3, 4, 5, 6} 
          */
-        iterator insert(const_iterator position, value_type value)
+        iterator insert(const_iterator position, const T& value)
         {
-            int index = get_index(position, m_data);
+            int index = get_index(position, cbegin());
 
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
+            if (index > m_size) OUT_OF_BOUNDS_EXCEPTION
 
             ++m_size;
 
             if (m_size > m_capacity)
                 resize(m_size);
 
-            for (size_type i = m_size - 1; i >= index; --i)
-                m_data[i + 1] = m_data[i];
-        
-            m_data[index] = value;
+            for (size_type i = m_size - 1; i > index; --i)
+                m_data[i] = m_data[i - 1];
 
-            return m_data + index;
+            m_alloc.destroy(m_data + index);
+            m_alloc.construct(m_data + index, value);
+
+            return iterator(m_data + index);
         }
 
-        void insert(const_iterator position, size_type size, value_type value)
+        /**
+         * @brief Inserts count copies of the value before pos
+         */
+        iterator insert(const_iterator position, size_type count, const value_type& value)
         {
-            size_type index = get_index(position, begin());
+            if (count == 0)
+                return iterator(position);
 
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
+            int index = get_index(position, begin());
 
-            size_type old_size = m_size;                      // use 'old_size' var to get the index of the last item in the vector before the insert
+            if (index > m_size) OUT_OF_BOUNDS_EXCEPTION
 
-            m_size += size;
+            // use `old_size` to get the index of the last item in the container before the insert
+            int old_size = m_size;
+
+            m_size += count;
 
             if (m_size > m_capacity)
                 resize(m_size);
 
-            for (size_type i = old_size - 1; i >= index; i--) // move all items 'size' spaces to the right
-                m_data[i + size] = m_data[i];
+            // move all items 'size' spaces to the right
+            for (int i = old_size - 1; i >= index; --i)
+                m_data[i + count] = m_data[i];
 
-            for (size_type i = index; i <= index + size - 1; i++)
-                m_data[i] = value;
+            for (size_type i = index; i <= index + count - 1; ++i)
+            {
+                m_alloc.destroy(m_data + i);
+                m_alloc.construct(m_data + i, value);
+            }
+
+            return iterator(m_data + index);
         }
 
-        void insert(const_iterator position, iterator it_1, iterator it_2)
+        template <typename InputIt, typename = RequireInIterator<InputIt>> 
+        iterator insert(const_iterator position, InputIt first, InputIt last)
         {
-            int index = get_index(position, begin());
+            if (first == last)
+                return iterator(position);
 
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
+            int index = get_index(position, cbegin());            
 
-            int additional_size = std::abs(it_1 - it_2);
+            if (index > m_size) OUT_OF_BOUNDS_EXCEPTION
+
+            int additional_size = std::abs(first - last);
 
             size_type old_size = m_size;
 
@@ -917,12 +997,54 @@ namespace stl
 
             if (m_size > m_capacity)
                 resize(m_size);
-
-            for (size_type i = old_size - 1; i >= index; --i)
-                m_data[i + additional_size] = m_data[i];
+    
+            // move all items 'additional_size' spaces to the right
+            for (int i = old_size - 1; i >= index; --i)
+                m_data[i + additional_size - 1] = m_data[i];
 
             for (size_type i = index; i <= index + additional_size - 1; ++i)
-                m_data[i] = *it_1++;
+            {
+                m_alloc.destroy(m_data + i);
+                m_alloc.construct(m_data + i, *first);
+
+                ++first;
+            }
+
+            return iterator(m_data + index);
+        }
+
+        iterator insert(const_iterator position, std::initializer_list<value_type> init)
+        {
+            int additional_size = init.size();
+
+            if (additional_size == 0)
+                return iterator(position);
+
+            int index = get_index(position, cbegin());
+            
+            if (index > m_size) OUT_OF_BOUNDS_EXCEPTION
+
+            int old_size = m_size;
+
+            m_size += additional_size;
+
+            if (m_size > m_capacity)
+                resize(m_size);
+
+            // move all items 'additional_size' spaces to the right
+            for (int i = old_size - 1; i >= index; --i)
+                m_data[i + additional_size] = m_data[i];
+
+            const_iterator it = init.begin();
+            for (size_type i = index; i < index + additional_size; ++i)
+            {
+                m_alloc.destroy(m_data + i);
+                m_alloc.construct(m_data + i, *it);
+
+                ++it;
+            }
+
+            return iterator(m_data + index);
         }
 
         /**
@@ -948,15 +1070,13 @@ namespace stl
 
             value_type* temp_ptr = m_alloc.allocate(new_capacity);
 
-            // memcpy can be used because the objects are already constructed
-            memcpy(temp_ptr, m_data, (m_size - 1) * META_SIZE);
+            // memcpy can be used, since the objects inside the container are already constructed
+            stl::memcpy(temp_ptr, m_data, (m_size - 1) * META_SIZE);
 
             m_alloc.deallocate(m_data, m_capacity);
 
             m_capacity = new_capacity;
-            m_data = temp_ptr;
-
-            // std::cout << "//// " << m_capacity << std::endl;      
+            m_data = temp_ptr;     
         }
 
         void push_back(const_reference element)
@@ -1020,15 +1140,18 @@ namespace stl
 
         void swap(vector& payload) noexcept
         {
-            T*        temp_m_data     = this->m_data;
-            size_type temp_m_size     = this->m_size;
-            size_type temp_m_capacity = this->m_capacity;
+            T*             temp_m_data           = this->m_data;
+            allocator_type temp_m_allocator      = this->m_alloc;
+            size_type      temp_m_size           = this->m_size;
+            size_type      temp_m_capacity       = this->m_capacity;
 
             this->m_data              = payload.data();
+            this->m_alloc             = payload.get_allocator();
             this->m_size              = payload.size();
             this->m_capacity          = payload.capcacity();
 
             payload.m_data            = temp_m_data;
+            payload.m_alloc           = temp_m_allocator;
             payload.m_size            = temp_m_size;
             payload.m_capacity        = temp_m_capacity;
         }
@@ -1080,7 +1203,7 @@ namespace stl
         size_type      m_capacity;
         allocator_type m_alloc;
 
-        constexpr size_type get_index(iterator it_1, iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
+        constexpr size_type get_index(const_iterator it_1, const_iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
     };
 
     /**
@@ -1138,5 +1261,7 @@ namespace stl
     template <typename T, typename Alloc>
     inline bool operator>=(const vector<T, Alloc>& lhs, const vector<T, Alloc>& rhs) { return !(lhs < rhs); }
 }
+
+#include "vector.tcc"
 
 #endif // VECTOR_H

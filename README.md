@@ -15,6 +15,8 @@ This is my custom implementation of the STL containers and other generic utility
 - [reverse_iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/reverse_iterator.h)
 
 ## Other utilities
-- [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator.h)
+- [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator/allocator.h)
 - [memory.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/memory.h)
-- [core.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/core.h)
+- [algorithm.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/algorithm/algorithm.h)
+- [type_traits.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/traits/type_traits.h)
+- [hash.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/functional_hash/hash.h)

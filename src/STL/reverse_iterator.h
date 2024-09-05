@@ -29,7 +29,7 @@
 #ifndef __REVERSE_ITERATOR_H__
 #define __REVERSE_ITERATOR_H__
 
-#include "core.h"
+#include "algorithm/algorithm.h"
 
 namespace stl
 {
@@ -47,20 +47,29 @@ namespace stl
 
     // Random access iterator tag, derived from bidirectional_iterator_tag
     struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+    
+    /// @brief Primary template (fallback) | SFINAE Compatibility
+    template <typename Iterator, typename = _void_t<>>
+    struct __iterator_traits { };
 
     /**
-     * @brief Primary template for iterator_traits
-     * @param Iterator Type of iterator
-     * @note  It assumes that the iterator type (`e.g., std::vector<int>::iterator`) defines these types as nested types
+     * @brief  Specialization template for @c __iterator_traits
+     * @tparam Iterator Type of iterator
+     * @note   It assumes that the iterator type (`e.g., std::vector<int>::iterator`) defines these types as nested types
      * 
-     * @typedef `difference_type`    -  type that represents the difference between two iterators
-     * @typedef `value_type`         -  type of the elements pointed to by the iterator
-     * @typedef `pointer`            -  type of a pointer to an element pointed to by the iterator
-     * @typedef `reference`          -  type of a reference to an element pointed to by the iterator
-     * @typedef `iterator_category`  -  category of the iterator `[input / output / forward / bidirectional / random access]`
+     * @typedef @c `difference_type`    -  type that represents the difference between two iterators
+     * @typedef @c `value_type`         -  type of the elements pointed to by the iterator
+     * @typedef @c `pointer`            -  type of a pointer to an element pointed to by the iterator
+     * @typedef @c `reference`          -  type of a reference to an element pointed to by the iterator
+     * @typedef @c `iterator_category`  -  category of the iterator `[input / output / forward / bidirectional / random access]`
      */
     template <typename Iterator>
-    struct iterator_traits
+    struct __iterator_traits<Iterator, _void_t<
+        typename Iterator::difference_type,
+        typename Iterator::value_type,
+        typename Iterator::pointer,
+        typename Iterator::reference,
+        typename Iterator::iterator_category>>
     {
         typedef typename Iterator::difference_type     difference_type;
         typedef typename Iterator::value_type          value_type;
@@ -68,8 +77,15 @@ namespace stl
         typedef typename Iterator::reference           reference;
         typedef typename Iterator::iterator_category   iterator_category;
     };
+
+    /** 
+     * @brief  A simple wrapper around @c __iterator_traits with which the user directly interacts with
+     * @tparam Iterator Type of iterator
+     */ 
+    template <typename Iterator>
+    struct iterator_traits : public __iterator_traits<Iterator> { };
     
-    /** @brief Partial specialization for raw pointers (`e.g., int*`) */
+    /// @brief Partial specialization for raw pointers (e.g., int*)
     template <typename T>
     struct iterator_traits<T*>
     {
@@ -80,7 +96,7 @@ namespace stl
         typedef random_access_iterator_tag             iterator_category;
     };
 
-    /** @brief Partial specialization for raw const pointers (`e.g., const int*`) */
+    /// @brief Partial specialization for raw const raw pointers (e.g., const int*)
     template <typename T>
     struct iterator_traits<const T*>
     {
@@ -93,7 +109,7 @@ namespace stl
 
     /**
      * @brief An iterator adaptor that reverses the direction of a given iterator
-     * @param T Type of iterator to adapt
+     * @tparam T Type of iterator to adapt
      */
     template <typename T>
     class reverse_iterator
@@ -191,6 +207,9 @@ namespace stl
     private:
         iterator_type m_current;
     };
+
+    template <typename InIterator>
+    using RequireInIterator = typename enable_if<is_convertible<typename iterator_traits<InIterator>::iterator_category, input_iterator_tag>::value>::type;
 }
 
 #endif // REVERSE_ITERATOR_H

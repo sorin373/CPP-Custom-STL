@@ -1,12 +1,10 @@
 #ifndef __ARRAY_TEST_H__
 #define __ARRAY_TEST_H__
 
-#include "../STL/array.h"
+#include "../STL/containers/array/array.h"
 
 #include <iostream>
 #include <cassert>
-
-#include <array>
 
 static unsigned int COUNT = 0;
 

@@ -1,6 +1,6 @@
 @echo off
 
-set SOURCE_FILE=src\main.cpp src\functional_hash\hash_bytes.cpp
+set SOURCE_FILE=src\main.cpp src\STL\functional_hash\hash_bytes.cpp
 set OUTPUT_FILE=build\main.exe
 
 if exist %OUTPUT_FILE% (

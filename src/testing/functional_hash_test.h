@@ -1,7 +1,7 @@
 #ifndef __FUNCTIONAL_HASH_TEST_H__
 #define __FUNCTIONAL_HASH_TEST_H__
 
-#include "../functional_hash/hash.h"
+#include "../STL/functional_hash/hash.h"
 
 #include <iostream>
 #include <cassert>

@@ -10,7 +10,7 @@
 
 #define __TEST_ALL__             0 
 #define __TEST_ARRAY__           0 
-#define __TEST_VECTOR__          0
+#define __TEST_VECTOR__          1
 
 #define __TEST_FUNCTIONAL_HASH__ 0
 

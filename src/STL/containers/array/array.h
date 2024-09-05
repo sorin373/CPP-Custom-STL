@@ -30,9 +30,9 @@
 #ifndef __ARRAY_H__
 #define __ARRAY_H__
 
-#include "core.h"
-#include "memory.h"
-#include "reverse_iterator.h"
+#include "../../algorithm/algorithm.h"
+#include "../../memory.h"
+#include "../../reverse_iterator.h"
 
 #include <initializer_list>
 #include <stdexcept>

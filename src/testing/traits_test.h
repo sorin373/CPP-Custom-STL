@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Types/traits.h"
-#include "../STL/array.h"
+#include "../STL/traits/type_traits.h"
+#include "../STL/containers/array/array.h"
 
 namespace traits_test
 {   
@@ -20,6 +20,7 @@ namespace traits_test
 
     static_assert(c1::value != E::e2);
     static_assert(c1() == E::e1);
+    
 
     /// @c is_void
 
@@ -444,6 +445,26 @@ namespace traits_test
         stl::is_member_pointer_v<int(cls::*)> == true  &&
         stl::is_member_pointer_v<int>         == false
     );
+
+
+
+    ////
+
+
+    namespace test
+    {
+        class A {};
+        class B : public A {};
+        class C {};
+        class D { public: operator C() { return c; } C c; };
+    }
+
+    static_assert(stl::is_convertible<test::B*, test::A*>::value == true);
+    static_assert(stl::is_convertible<int, double>::value == true);
+
+
+    ////
+
 
     // main testing function
     void __TEST__() 

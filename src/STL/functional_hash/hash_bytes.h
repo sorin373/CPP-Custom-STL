@@ -1,7 +1,7 @@
 #ifndef __HASH_BYTES_H__
 #define __HASH_BYTES_H__
 
-#include "../STL/core.h"
+#include "../traits/type_traits.h"
 
 namespace stl
 {

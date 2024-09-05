@@ -38,7 +38,7 @@
 #ifndef __VECTOR_TEST_H__
 #define __VECTOR_TEST_H__
 
-#include "../STL/vector.h"
+#include "../STL/containers/vector/vector.h"
 
 #include <iostream>
 #include <cassert>
@@ -53,7 +53,6 @@
 
 #define INT_MAX 2147483647
 #define INT_MIN	(-INT_MAX-1)
-
 
         /****************************
         * CUSTOM TESTING ALLOCATORS *
@@ -189,6 +188,8 @@ public:
         TEST_CASE(test_15(__VECTOR_CAP));
         TEST_CASE(test_16());
         TEST_CASE(test_17());
+        TEST_CASE(test_18());
+        TEST_CASE(test_19());
         
         test_max_size();
         test_custom_allocator();
@@ -478,6 +479,53 @@ private:
 
         return true;
     }
+
+    bool test_18()
+    {
+        stl::vector<T, Allocator> temp = my_vector;
+
+        T value = my_vector[my_vector.size() - 1];
+
+        typename stl::vector<T, Allocator>::iterator pos = my_vector.begin();
+        pos = my_vector.insert(pos, value);
+
+        __check_result_no_return__(*pos, value);
+
+        pos = my_vector.insert(pos, 2, value);
+        
+        __check_result_no_return__(*pos, value);
+        __check_result_no_return__(*(pos + 1), value);
+        __check_result_no_return__(*(pos + 2), value);
+
+        pos = my_vector.begin();
+
+
+        my_vector.insert(pos + 2, temp.begin(), temp.end());
+
+        for (stl::size_t i = 2; i < 2 + temp.size(); ++i)
+            __check_result_no_return__(my_vector[i], temp[i - 2]);
+
+        my_vector = temp;
+
+        return true;
+    }
+
+    bool test_19()
+    {
+        stl::vector<T, Allocator> temp = my_vector;
+
+        T value = my_vector[0];
+
+        typename stl::vector<T, Allocator>::iterator pos = my_vector.insert(my_vector.end(), {value, value, value});
+
+        __check_result_no_return__(*pos, value);
+        __check_result_no_return__(*(pos + 1), value);
+        __check_result_no_return__(*(pos + 2), value);
+
+        my_vector = temp;
+
+        return true;
+    }
     
     /** @fn max_size() | standalone test */
     void test_max_size() { std::cout << "\nMax-size: " << std::uppercase << my_vector.max_size() << " | 0x" << std::hex << my_vector.max_size() << std::dec << std::endl; }
@@ -486,7 +534,7 @@ private:
     void test_custom_allocator() { std::cout << "Total size allocated: " << my_vector.get_allocator().get_allocs() << "\n"; }
 
     stl::vector<T, Allocator> my_vector;
-    constexpr static stl::size_t N = 18;
+    constexpr static stl::size_t N = 20;
 };
 
 #endif // VECTOR_TEST_H

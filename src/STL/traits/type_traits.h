@@ -113,6 +113,8 @@ namespace stl
     #  @b Const-volatility_specifiers  #
     ##################################*/
     
+    /// @c remove_cv
+    
     template <typename T>
     struct remove_const { typedef T type; };
 
@@ -125,24 +127,38 @@ namespace stl
     template <typename T>
     struct remove_volatile<volatile T> { typedef T type; };
 
-    ///
+    template <typename T> using remove_const_t    = typename remove_const<T>::type;
+    template <typename T> using remove_volatile_t = typename remove_volatile<T>::type;
 
-    template <typename>
+    template <typename> 
     struct remove_cv;
 
     template <typename T>
     struct remove_cv { typedef typename remove_const<typename remove_volatile<T>::type>::type type; };
 
+    template <typename T> using remove_cv_t = typename remove_cv<T>::type;
+
+    /// @c add_cv
+
+    template <typename T>
+    struct add_const { typedef T const type; };
+
+    template <typename T>
+    struct add_volatile { typedef T volatile type; };
+
+    template <typename T>
+    struct add_cv { typedef typename add_const<typename add_volatile<T>::type>::type type; };
+
+    template <typename T> using add_const_t = typename add_const<T>::type;
+    template <typename T> using add_volatile_T = typename add_volatile<T>::type;
+    template <typename T> using add_cv_t = typename add_cv<T>::type;
 
     /// Primary type categories
 
     /// @c is_void
 
-    template <typename>
-    struct is_void_helper : public false_type { };
-
-    template <>
-    struct is_void_helper<void> : public true_type { };
+    template <typename> struct is_void_helper : public false_type { };
+    template <> struct is_void_helper<void>   : public true_type { };
 
     /**
      * @brief @c is_void checks if @c T is a void type 
@@ -158,11 +174,8 @@ namespace stl
 
     /// @c is_null_pointer
     
-    template <typename>
-    struct is_null_pointer_helper : public false_type { };
-
-    template <>
-    struct is_null_pointer_helper<nullptr_t> : public true_type { };
+    template <typename> struct is_null_pointer_helper    : public false_type { };
+    template <> struct is_null_pointer_helper<nullptr_t> : public true_type { };
 
     template <typename T>
     struct is_null_pointer : public is_null_pointer_helper<typename remove_cv<T>::type>::type { };
@@ -590,6 +603,12 @@ namespace stl
     template <typename T>
     struct is_volatile<volatile T> : public true_type { };
 
+    template <typename T>
+    struct is_trivial : public integral_constant<bool, __is_trivial(T)> { };
+
+    template <typename T>
+    struct is_trivially_copyable : public integral_constant<bool, __is_trivially_copyable(T)> { };
+
 
     ////
     
@@ -626,6 +645,22 @@ namespace stl
 
     //
 
+    /// remove ref
+
+    template <typename T>
+    struct remove_reference { typedef T type; };
+
+    template <typename T>
+    struct remove_reference<T&> { typedef T type; };
+
+    template <typename T>
+    struct remove_reference<T&&> { typedef T type; };
+
+
+
+
+
+
     template <typename T>
     struct is_referenceable : public __or_<is_object<T>, is_reference<T>>::type { };
 
@@ -635,27 +670,31 @@ namespace stl
     template <typename Res, typename... Args>
     struct is_referenceable<Res(Args......)> : public true_type { };
 
+
+
+
+
+
     template <typename T, bool = is_referenceable<T>::value>
     struct add_rvalue_reference_helper { typedef T type; };
 
     template <typename T>
     struct add_rvalue_reference_helper<T, true> { typedef T &&type; };
 
-    template <typename>
-    struct __add_rvalue_reference;
+    template <typename T> 
+    struct add_rvalue_reference : public add_rvalue_reference_helper<T> { };
 
-    template <typename T>
-    typename __add_rvalue_reference<T>::type declval() noexcept;
+    template <typename T> typename add_rvalue_reference<T>::type declval() noexcept;
 
     template <typename T>
     struct declval_protector
     {
         static constexpr bool stop = false;
-        static typename __add_rvalue_reference<T>::type delegate();
+        static typename add_rvalue_reference<T>::type delegate();
     };  
 
     template <typename T>
-    inline typename __add_rvalue_reference<T>::type declval() noexcept
+    inline typename add_rvalue_reference<T>::type declval() noexcept
     {
         static_assert(declval_protector<T>::stop, "declval() must not be used!");
         return declval_protector<T>::delegate();
@@ -669,17 +708,16 @@ namespace stl
     template <typename From, typename To>
     class is_convertible_helper<From, To, false> 
     {
-        template <typename T>
-        static void __test_aux(T);
+    private:
+        template <typename T> static void test_aux(T);
 
-        template <typename From1, typename To1, typename = decltype(__test_aux<To1>(stl::declval<From1>()))>
-        static true_type __test(int);
+        template <typename From1, typename To1, typename = decltype(test_aux<To1>(declval<From1>()))>
+        static true_type test(int);
 
-        template <typename, typename>
-        static false_type __test(...);
+        template <typename, typename> static false_type test(...);
 
     public:
-        typedef decltype(__test<From, To>(0)) type;
+        typedef decltype(test<From, To>(0)) type;
     };
 
     template <typename From, typename To>

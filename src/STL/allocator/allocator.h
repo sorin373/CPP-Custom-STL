@@ -1,10 +1,7 @@
 #ifndef __ALLOCATOR_H__
 #define __ALLOCATOR_H__
 
-#include "core.h"
-
-#include <new>
-#include <limits>
+#include "../algorithm/algorithm.h"
 
 namespace stl
 {
@@ -40,23 +37,13 @@ namespace stl
 
         ~allocator() noexcept { }
 
-        size_type max_size() const noexcept { return std::numeric_limits<size_type>::max() / sizeof(value_type); }
+        size_type max_size() const noexcept;
 
-        pointer allocate(size_type size, const void* hint = nullptr)
-        {
-            if (size == 0)
-                return nullptr;
+        pointer allocate(size_type size, const void* hint = nullptr);
 
-            pointer ptr = static_cast<pointer>(::operator new(size * sizeof(value_type)));
+        void deallocate(pointer ptr, size_type size);
 
-            if (!ptr) throw std::bad_alloc();
-
-            return ptr;
-        }
-
-        void deallocate(pointer ptr, size_type size) { ::operator delete(ptr); }
-
-        void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
+        void construct(pointer ptr, const_reference value);
 
         void destroy(pointer ptr) { ptr->~T(); }
     };
@@ -67,5 +54,7 @@ namespace stl
     template <typename TypeI, typename TypeII>
     bool operator!=(const allocator<TypeI>&, const allocator<TypeII>&) throw() { return false; }
 }
+
+#include "allocator.tcc"
 
 #endif // ALLOCATOR_H

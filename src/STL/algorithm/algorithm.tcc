@@ -1,7 +1,4 @@
-#ifndef __CORE_H__
-#define __CORE_H__
-
-#include "../Types/traits.h"
+#include "../memory.h"
 
 namespace stl
 {
@@ -89,30 +86,47 @@ namespace stl
         return (lhs == lhs_end) && (rhs == rhs_end);
     }
 
-    template <typename Type>
-    void swap(Type& lhs, Type& rhs)
+    template <typename T>
+    void swap(T& lhs, T& rhs)
     {
-        Type aux = lhs;
+        T aux = lhs;
         lhs = rhs;
         rhs = aux;
     }
 
-    template <typename Type>
-    void bubble_sort(Type *arr, stl::size_t size)
+    template <typename T, size_t N>
+    void swap(T (&a)[N], T (&b)[N])
     {
-        bool is_sorted = false;
-
-        do
-        {
-            is_sorted = true;
-            for (stl::size_t i = 0; i < size - 1; ++i)
-                if (arr[i] > arr[i + 1])
-                {
-                    stl::swap(arr[i], arr[i + 1]);
-                    is_sorted = false;
-                }
-        } while (!is_sorted);
+        for (size_t i = 0; i < N; ++i)
+            swap(a[i], b[i]);
     }
-} 
 
-#endif // CORE_H
+    template <typename T>
+    typename enable_if<is_trivially_copyable<T>::value, T*>::type copy(const T* first, const T* last, T* d_first)
+    {
+        memcpy(d_first, first, sizeof(T) * (last - first));
+        return d_first + (last - first);
+    }
+
+    template <typename InputIt, typename OutputIt>
+    OutputIt copy(InputIt first, InputIt last, OutputIt d_first)
+    {
+        for (; first != last; (void)++first, (void)++d_first)
+            *d_first = *first;
+
+        return d_first;
+    }
+
+    template <typename InputIt, typename OutputIt, typename UnaryPred>
+    OutputIt copy_if(InputIt first, InputIt last, OutputIt d_first, UnaryPred pred)
+    {
+        for (; first != last; ++first)
+            if (pred(*first))
+            {
+                *d_first = *first;
+                ++d_first;
+            }
+
+        return d_first;
+    }
+}

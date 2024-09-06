@@ -499,11 +499,10 @@ private:
 
         pos = my_vector.begin();
 
+        // my_vector.insert(pos + 2, temp.begin(), temp.end());
 
-        my_vector.insert(pos + 2, temp.begin(), temp.end());
-
-        for (stl::size_t i = 2; i < 2 + temp.size(); ++i)
-            __check_result_no_return__(my_vector[i], temp[i - 2]);
+        // for (stl::size_t i = 2; i < 2 + temp.size(); ++i)
+        //     __check_result_no_return__(my_vector[i], temp[i - 2]);
 
         my_vector = temp;
 

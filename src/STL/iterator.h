@@ -26,8 +26,7 @@
     @brief This is part of the standard template libraries (STL) and it is an iterator adaptor that reverses the direction of a given iterator
  */
 
-#ifndef __REVERSE_ITERATOR_H__
-#define __REVERSE_ITERATOR_H__
+#pragma once
 
 #include "algorithm/algorithm.h"
 
@@ -208,8 +207,28 @@ namespace stl
         iterator_type m_current;
     };
 
-    template <typename InIterator>
-    using RequireInIterator = typename enable_if<is_convertible<typename iterator_traits<InIterator>::iterator_category, input_iterator_tag>::value>::type;
-}
+    template <typename Iterator>
+    using RequireIterator = typename enable_if<is_convertible<typename iterator_traits<Iterator>::iterator_category, input_iterator_tag>::value>::type;
 
-#endif // REVERSE_ITERATOR_H
+    template <typename Iterator>
+    constexpr typename iterator_traits<Iterator>::difference_type distance(Iterator first, Iterator last)
+    {
+        using category = typename iterator_traits<Iterator>::iterator_category;
+        static_assert(is_base_of<input_iterator_tag, category>::value);
+
+        if (is_base_of<random_access_iterator_tag, category>::value)
+            return last - first;
+        else
+        {
+            typename iterator_traits<Iterator>::difference_type result = 0;
+
+            while (first != last)
+            {
+                ++first;
+                ++result;
+            }
+
+            return result;
+        }
+    }
+}

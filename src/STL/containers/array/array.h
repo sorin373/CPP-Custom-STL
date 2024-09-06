@@ -32,7 +32,7 @@
 
 #include "../../algorithm/algorithm.h"
 #include "../../memory.h"
-#include "../../reverse_iterator.h"
+#include "../../iterator.h"
 
 #include <initializer_list>
 #include <stdexcept>

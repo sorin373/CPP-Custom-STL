@@ -609,6 +609,8 @@ namespace stl
     template <typename T>
     struct is_trivially_copyable : public integral_constant<bool, __is_trivially_copyable(T)> { };
 
+    template <typename Base, typename Derived>
+    struct is_base_of : public integral_constant<bool, __is_base_of(Base, Derived)> { };
 
     ////
     

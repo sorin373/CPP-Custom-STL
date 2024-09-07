@@ -266,4 +266,93 @@ namespace stl
 
         return iterator(this->m_data + index);
     }
+
+    template <typename T, typename Allocator>
+    typename vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator pos, std::initializer_list<value_type> ilist)
+    {
+        int add_size = ilist.size();
+        
+        if (add_size == 0)
+            return iterator(pos);
+
+        difference_type index = stl::distance(cbegin(), pos);
+
+        if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
+
+        if (this->m_size + add_size > this->m_capacity)
+            this->resize(this->m_size + add_size);
+
+        for (int i = this->m_size - 1; i >= index; --i)
+            this->m_data[i + add_size] = this->m_data[i];
+
+        const_iterator it = ilist.begin();
+        for (int i = index, N = index + add_size - 1; i <= N; ++i)
+        {
+            this->m_alloc.destroy(this->m_data + i);
+            this->m_alloc.construct(this->m_data + i, *it);
+
+            ++it;
+        }
+
+        this->m_size += add_size;
+
+        return iterator(this->m_data + index);
+    }
+
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::resize(size_type count)
+    {
+        if (count < this->m_size)
+        {
+            for (size_type i = count; i < this->m_size; ++i)
+                this->m_alloc.destroy(this->m_data + i);
+
+            this->m_size = count;
+            
+            return;
+        }
+        else if (count <= this->m_capacity)
+            return;
+
+        size_type new_capacity = count + count / 2 + 1;
+
+        value_type *temp = this->m_alloc.allocate(new_capacity);
+
+        stl::memcpy(temp, this->m_data, this->m_size * sizeof(value_type));
+
+        this->m_alloc.deallocate(this->m_data, this->m_capacity);
+        
+        this->m_size = count;
+        this->m_capacity = new_capacity;
+        this->m_data = temp;
+    }
+
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::resize(size_type count, const_reference value)
+    {
+        if (count < this->m_size)
+        {
+            for (size_type i = count; i < this->m_size; ++i)
+                this->m_alloc.destroy(this->m_data + i);
+
+            this->m_size = count;
+            
+            return;
+        }
+        else if (count <= this->m_capacity)
+            return;
+
+        size_type new_capacity = count + count / 2 + 1;
+
+        value_type *temp = this->m_alloc.allocate(new_capacity);
+        
+        stl::memcpy(temp, this->m_data, this->m_size * sizeof(value_type));
+
+        for (size_type i = this->m_size; i < count; ++i)
+            this->m_alloc.construct(temp + i, value);
+
+        this->m_capacity = new_capacity;
+        this->m_size = count;
+        this->m_data = temp;
+    }
 }

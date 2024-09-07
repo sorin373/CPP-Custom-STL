@@ -684,7 +684,7 @@ namespace stl
 
         /**
          * @brief  inserts a copy of value before pos.
-         * @param  iterator before which the content will be inserted (pos may be the @c end() iterator) @param value element to insert
+         * @param  pos iterator before which the content will be inserted (pos may be the @c end() iterator) @param value element to insert
          * @return iterator pointing to the inserted value.
          * 
          * @example stl::vector<int> my_vector({1, 2, 3, 4, 5, 6});
@@ -705,39 +705,7 @@ namespace stl
         template <typename InputIt, typename = stl::RequireIterator<InputIt>> 
         iterator insert(const_iterator pos, InputIt first, InputIt last);
 
-        iterator insert(const_iterator position, std::initializer_list<value_type> init)
-        {
-            int additional_size = init.size();
-
-            if (additional_size == 0)
-                return iterator(position);
-
-            int index = get_index(position, cbegin());
-            
-            if (index > m_size) OUT_OF_BOUNDS_EXCEPTION
-
-            int old_size = m_size;
-
-            m_size += additional_size;
-
-            if (m_size > m_capacity)
-                resize(m_size);
-
-            // move all items 'additional_size' spaces to the right
-            for (int i = old_size - 1; i >= index; --i)
-                m_data[i + additional_size] = m_data[i];
-
-            const_iterator it = init.begin();
-            for (size_type i = index; i < index + additional_size; ++i)
-            {
-                m_alloc.destroy(m_data + i);
-                m_alloc.construct(m_data + i, *it);
-
-                ++it;
-            }
-
-            return iterator(m_data + index);
-        }
+        iterator insert(const_iterator pos, std::initializer_list<value_type> init);
 
         /**
          * @brief This function resizes the container. While the m_size increses by 1 the m_capacity is calculated 
@@ -747,38 +715,18 @@ namespace stl
          * @param new_size The new size to which the vector will be resized to
          * @throw If the new memory block can not be allocated, a runtime error will be thrown.
          */
-        void resize(size_type new_size)
-        {
-            if (new_size < m_size)
-            {
-                for (size_type i = new_size; i < m_size; ++i)
-                    m_alloc.destroy(m_data + i);
+        void resize(size_type count);
 
-                m_size = new_size;
-                return;
-            }
-                
-            size_type new_capacity = new_size + new_size / 2 + 1;          
-
-            value_type* temp_ptr = m_alloc.allocate(new_capacity);
-
-            // memcpy can be used, since the objects inside the container are already constructed
-            stl::memcpy(temp_ptr, m_data, (m_size - 1) * sizeof(value_type));
-
-            m_alloc.deallocate(m_data, m_capacity);
-
-            m_capacity = new_capacity;
-            m_data = temp_ptr;     
-        }
+        void resize(size_type count, const_reference value);
 
         void push_back(const_reference element)
         {
-            ++m_size;
+            if (m_size + 1 > m_capacity)
+                resize(m_size + 1);
+            else
+                ++m_size;
 
-            if (m_size > m_capacity)
-                resize(m_size);
-
-            m_alloc.construct(&m_data[m_size - 1], element);
+            m_alloc.construct(m_data + m_size - 1, element);
         }
 
         void pop_back()

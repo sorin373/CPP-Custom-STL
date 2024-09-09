@@ -6,13 +6,13 @@ This is my custom implementation of the STL containers and other generic utility
 
 ## Containers
 
-- [array.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/array.h) 
-- [vector.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/vector.h)
+- [array.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/array/array.h) 
+- [vector.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/vector/vector.h)
 - [forward_list.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/forward_list.h)
 - [unordered_map.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/unordered_map.h)
 
 ## Iterators
-- [reverse_iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/reverse_iterator.h)
+- [iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/iterator.h)
 
 ## Other utilities
 - [allocator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/allocator/allocator.h)

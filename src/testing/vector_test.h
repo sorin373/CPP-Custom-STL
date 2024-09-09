@@ -199,6 +199,8 @@ public:
 
     constexpr vector_container_test(const std::initializer_list<T>& init) noexcept : my_vector(init) { }
 
+    ~vector_container_test() = default;
+
 private:
     bool test_0()
     {
@@ -470,7 +472,7 @@ private:
 
     bool test_17()
     {
-        stl::vector<T, Allocator> temp = my_vector;
+        stl::vector<T, Allocator> temp(my_vector);
 
         my_vector.clear();
         __check_result_no_return__(my_vector.size(), 0);
@@ -482,7 +484,7 @@ private:
 
     bool test_18()
     {
-        stl::vector<T, Allocator> temp = my_vector;
+        stl::vector<T, Allocator> temp(my_vector);
 
         T value = my_vector[my_vector.size() - 1];
 
@@ -499,10 +501,10 @@ private:
 
         pos = my_vector.begin();
 
-        // my_vector.insert(pos + 2, temp.begin(), temp.end());
+        my_vector.insert(pos + 2, temp.begin(), temp.end());
 
-        // for (stl::size_t i = 2; i < 2 + temp.size(); ++i)
-        //     __check_result_no_return__(my_vector[i], temp[i - 2]);
+        for (stl::size_t i = 2; i < 2 + temp.size(); ++i)
+            __check_result_no_return__(my_vector[i], temp[i - 2]);
 
         my_vector = temp;
 
@@ -511,7 +513,7 @@ private:
 
     bool test_19()
     {
-        stl::vector<T, Allocator> temp = my_vector;
+        stl::vector<T, Allocator> temp(my_vector);
 
         T value = my_vector[0];
 

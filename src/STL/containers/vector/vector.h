@@ -719,25 +719,9 @@ namespace stl
 
         void resize(size_type count, const_reference value);
 
-        void push_back(const_reference element)
-        {
-            if (m_size + 1 > m_capacity)
-                resize(m_size + 1);
-            else
-                ++m_size;
+        void push_back(const_reference element);
 
-            m_alloc.construct(m_data + m_size - 1, element);
-        }
-
-        void pop_back()
-        {
-            if (m_size > 0)
-            {
-                m_data[m_size - 1].~T();
-
-                m_size--;
-            }
-        }
+        void pop_back();
 
         void erase(iterator position)
         {

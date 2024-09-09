@@ -8,7 +8,13 @@ namespace stl
         if (this != &other)
         {
             if (this->m_data != nullptr)
-                m_alloc.deallocate(this->m_data, this->m_capacity);
+            {
+                for (size_type i = 0; i < this->m_size; ++i)
+                    this->m_alloc.destroy(this->m_data + i);
+
+                this->m_alloc.deallocate(this->m_data, this->m_capacity);
+            }
+                
 
             this->m_capacity = other.capacity();
             this->m_size = other.size();
@@ -215,20 +221,20 @@ namespace stl
 
         if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
 
-        if (this->m_size + count > this->m_capacity)
-            this->resize(this->m_size + count);
+        this->m_size += count;
+
+        if (this->m_size > this->m_capacity)
+            this->resize(this->m_size);
 
         // move all items `size` spaces to the right
-        for (int i = this->m_size - 1; i >= index; --i)
-            this->m_data[i + count] = this->m_data[i];
-
-        for (int i = index, N = index + count - 1; i <= N; ++i)
+        for (int i = this->m_size - count; i > index; --i)
+            this->m_data[i + count - 1] = this->m_data[i - 1];
+            
+        for (int i = index, N = index + count; i < N; ++i)
         {
             this->m_alloc.destroy(this->m_data + i);
             this->m_alloc.construct(this->m_data + i, value);
         }
-
-        this->m_size += count;
 
         return iterator(this->m_data + index);
     }
@@ -246,23 +252,21 @@ namespace stl
 
         difference_type add_size = stl::distance(first, last);
 
-        std::cout << index << " " << add_size << std::endl;
+        this->m_size += add_size;
 
-        if (this->m_size + add_size > this->m_capacity)
-            this->resize(this->m_size + add_size);
+        if (this->m_size > this->m_capacity)
+            this->resize(this->m_size);
 
-        for (int i = this->m_size - 1; i >= index; --i)
-            this->m_data[i + add_size] = this->m_data[i];
+        for (int i = this->m_size - add_size; i >= index; --i)
+            this->m_data[i + add_size - 1] = this->m_data[i - 1];
 
-        for (int i = index, N = index + add_size - 1; i <= N; ++i)
+        for (int i = index, N = index + add_size; i < N; ++i)
         {
             this->m_alloc.destroy(this->m_data + i);
             this->m_alloc.construct(this->m_data + i, *first);
 
             ++first;
         }
-
-        this->m_size += add_size;
 
         return iterator(this->m_data + index);
     }
@@ -279,22 +283,22 @@ namespace stl
 
         if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
 
-        if (this->m_size + add_size > this->m_capacity)
-            this->resize(this->m_size + add_size);
+        this->m_size += add_size;
 
-        for (int i = this->m_size - 1; i >= index; --i)
-            this->m_data[i + add_size] = this->m_data[i];
+        if (this->m_size > this->m_capacity)
+            this->resize(this->m_size);
+
+        for (int i = this->m_size - add_size; i >= index; --i)
+            this->m_data[i + add_size - 1] = this->m_data[i - 1];
 
         const_iterator it = ilist.begin();
-        for (int i = index, N = index + add_size - 1; i <= N; ++i)
+        for (int i = index, N = index + add_size; i < N; ++i)
         {
             this->m_alloc.destroy(this->m_data + i);
             this->m_alloc.construct(this->m_data + i, *it);
 
             ++it;
         }
-
-        this->m_size += add_size;
 
         return iterator(this->m_data + index);
     }
@@ -354,5 +358,26 @@ namespace stl
         this->m_capacity = new_capacity;
         this->m_size = count;
         this->m_data = temp;
+    }
+
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::push_back(const_reference element)
+    {
+        if (this->m_size + 1 > this->m_capacity)
+            this->resize(this->m_size + 1);
+        else
+            ++this->m_size;
+
+        this->m_alloc.construct(this->m_data + this->m_size - 1, element);
+    }
+    
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::pop_back()
+    {
+        if (this->m_size > 0)
+        {
+            this->m_alloc.destroy(this->m_data + this->m_size - 1);
+            --this->m_size;
+        }
     }
 }

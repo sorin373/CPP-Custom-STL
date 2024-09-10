@@ -32,7 +32,6 @@
 
 #include "../../iterator.h"
 #include "../../allocator/allocator.h"
-#include "../../traits/allocator_traits.h"
 #include "../../algorithm/algorithm.h"
 
 #include <initializer_list>
@@ -105,28 +104,7 @@ namespace stl
          * @note  If T is a primitive type, such as int, T() would be 0
          * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
          */
-        explicit vector(size_type count, const T& value = T(), const Allocator& alloc = Allocator())
-            : m_capacity(count), m_size(count), m_alloc(alloc), m_data(nullptr)
-        {
-            if (count > 0)
-            {
-                m_data = m_alloc.allocate(count);
-
-                try
-                {
-                    for (size_type i = 0; i < m_size; ++i)
-                        m_alloc.construct(m_data + i, value);
-                }
-                catch(...)
-                {
-                    for (size_type i = 0; i < m_size; ++i)
-                        m_alloc.destroy(m_data + i);
-
-                    m_alloc.deallocate(m_data, m_capacity);
-                    throw;
-                }
-            }
-        }
+        explicit vector(size_type count, const T& value = T(), const Allocator& alloc = Allocator());
 
         /**
          * @brief Constructs the container using an initializer list
@@ -137,38 +115,7 @@ namespace stl
          * 
          * @throw If the allocator throws the std::bad_alloc exception, all allocated (constructed) elements up to that point will be destroyed and the memory will be freed.
         */
-        vector(std::initializer_list<value_type> init, const Allocator& alloc = Allocator())
-            : m_alloc(alloc), m_size(init.size()), m_capacity(init.size()), m_data(nullptr)
-        {
-            if (m_size > 0)
-            {
-                m_data = m_alloc.allocate(m_size);
-
-                try
-                {
-                    // constant iterator for the initializer list - std::initializer_list<T>::begin() returns a constant pointer
-                    const value_type* it = init.begin();    
-
-                    for (size_type i = 0; i < m_size; ++i)
-                    {
-                        m_alloc.construct(m_data + i, *it);
-                        ++it;
-                    }
-                }
-                catch(...)
-                {
-                    for (size_type i = 0; i < m_size; ++i)
-                        m_alloc.destroy(m_data + i);
-
-                    m_alloc.deallocate(m_data, m_capacity);
-
-                    m_data = nullptr;
-                    m_size = m_capacity = 0;
-
-                    throw;
-                }
-            }   
-        }
+        vector(std::initializer_list<value_type> ilist, const Allocator& alloc = Allocator());
 
         /**
          * @brief Constructs the container using another %vector container
@@ -380,7 +327,7 @@ namespace stl
          *          data[1] = 88;
          *          std::cout << data[1] << std::endl;        // 88
          */
-        reference operator[](size_type pos) { return at(pos); }
+        reference operator[](size_type pos) { return this->at(pos); }
 
         /**
          * @brief Returns a constant reference to the element at specified location pos. No bounds checking is performed.
@@ -392,7 +339,7 @@ namespace stl
          *          for (stl::size_t i = 0, size = data.size(); i < size; ++i)
          *              std::cout << data[i] << std::endl;                      // Using the const version of @c [] which prevents modification
          */
-        constexpr const_reference operator[](size_type pos) const { return at(pos); }
+        constexpr const_reference operator[](size_type pos) const { return this->at(pos); }
 
         /**
          * @brief  Returns a reference to the first element in the container.
@@ -404,7 +351,7 @@ namespace stl
          *          my_vector.front() = 88;
          *          std::cout << my_vector.front();                 // 88
          */
-        reference front() noexcept { return *m_data; }
+        reference front() noexcept { return *this->m_data; }
 
         /**
          * @brief  Returns a constant reference to the first element in the container.
@@ -414,7 +361,7 @@ namespace stl
          *          std::cout << my_vector.front() << std::endl;                // Using the const version of @fn front() which prevents modification
          * 
          */
-        constexpr const_reference front() const noexcept { return *m_data; }
+        constexpr const_reference front() const noexcept { return *this->m_data; }
 
         /**
          * @brief  Returns a reference to the last element in the container.
@@ -426,7 +373,7 @@ namespace stl
          *          my_vector.back() = 88;
          *          std::cout << my_vector.back();                  // 88
          */
-        reference back() noexcept  { return *(m_data + m_size - 1); }
+        reference back() noexcept  { return *(this->m_data + this->m_size - 1); }
 
         /**
          * @brief  Returns a constant reference to the last element in the container.
@@ -436,7 +383,7 @@ namespace stl
          *          std::cout << my_vector.back() << std::endl;             // Using the const version of @fn back() which prevents modification
          * 
          */
-        constexpr const_reference back() const noexcept { return *(m_data + m_size - 1); }
+        constexpr const_reference back() const noexcept { return *(this->m_data + this->m_size - 1); }
 
         /**
          * @brief Returns a pointer to the underlying array serving as element storage. 
@@ -448,7 +395,7 @@ namespace stl
          *          int* ptr = my_vector.data();
          *          
          */
-        T* data() noexcept { return m_data; }
+        T* data() noexcept { return this->m_data; }
 
         /**
          * @brief Returns a constant pointer to the underlying array serving as element storage. 
@@ -460,7 +407,7 @@ namespace stl
          *          const int* ptr = my_vector.data();                     // Using the const version of @fn data() which prevents modification
          *          
          */
-        constexpr T* data() const noexcept { return m_data; }
+        constexpr T* data() const noexcept { return this->m_data; }
 
         /************
         * ITERATORS *
@@ -482,7 +429,7 @@ namespace stl
          *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
          *              *it = 0;                 // modify value
          */
-        iterator begin() noexcept { return iterator(m_data); }
+        iterator begin() noexcept { return iterator(this->m_data); }
 
         /**
          * @brief Returns a constant iterator to the first element of the vector.
@@ -498,7 +445,7 @@ namespace stl
          *              std::cout << *cit << " "; // used @c * for primitive type `int`
          *                                        
          */
-        constexpr const_iterator cbegin() const noexcept { return const_iterator(m_data); }
+        constexpr const_iterator cbegin() const noexcept { return const_iterator(this->m_data); }
 
         /**
          * @brief Returns an iterator to the element following the last element of the vector.
@@ -516,7 +463,7 @@ namespace stl
          *          for (stl::vector<int>::itearator it = my_vector.begin(); it != my_vector.end(); ++it)
          *              *it = 0;                 // modify value
          */
-        iterator end() noexcept { return iterator(m_data + m_size); }
+        iterator end() noexcept { return iterator(this->m_data + this->m_size); }
 
         /**
          * @brief Returns a constant iterator to the element following the last element of the vector.
@@ -531,7 +478,7 @@ namespace stl
          *          for (stl::vector<int>::const_itearator cit = my_vector.cbegin(); cit != my_vector.cend(); ++cit)
          *              std::cout << *cit << " "; // used @c * for primitive type `int`                         
          */
-        constexpr const_iterator cend() const noexcept { return const_iterator(m_data + m_size); }
+        constexpr const_iterator cend() const noexcept { return const_iterator(this->m_data + this->m_size); }
         
         /**
          * @brief  Returns a reverse iterator to the first element of the reversed vector. It corresponds to the last element of the non-reversed vector. 
@@ -546,7 +493,7 @@ namespace stl
          *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
          *              *rit = 0;                 // modify value
          */
-        reverse_iterator rbegin() noexcept { return reverse_iterator(m_data + m_size); }
+        reverse_iterator rbegin() noexcept { return reverse_iterator(this->m_data + this->m_size); }
         
         /**
          * @brief  Returns a reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
@@ -561,7 +508,7 @@ namespace stl
          *          for (stl::vector<int>::reverse_itearator rit = my_vector.rbegin(); rit != my_vector.rend(); ++rit)
          *              *rit = 0;                 // modify value
          */
-        reverse_iterator rend() noexcept { return reverse_iterator(m_data); }
+        reverse_iterator rend() noexcept { return reverse_iterator(this->m_data); }
 
         /**
          * @brief  Returns a constant reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
@@ -574,7 +521,7 @@ namespace stl
          *          for (stl::vector<int>::reverse_itearator crit = my_vector.rbegin(); crit != my_vector.rend(); ++crit)
          *              std::cout << *crit << " "; // used @c * for primitive type `int`
          */
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + m_size); }
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(this->m_data + this->m_size); }
 
         /**
          * @brief  Returns a constant reverse iterator to the element following the last element of the reversed vector. It corresponds to the element preceding the first element of the non-reversed vector.
@@ -587,7 +534,7 @@ namespace stl
          *          for (stl::vector<int>::reverse_itearator crit = my_vector.rbegin(); crit != my_vector.rend(); ++crit)
          *              std::cout << *crit << " "; // used @c * for primitive type `int`
          */
-        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(m_data); } 
+        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(this->m_data); } 
 
         /***********
         * CAPACITY *
@@ -603,7 +550,7 @@ namespace stl
          *          my_vector.push_back(88);
          *          std::cout << my_vector.empty() << std::endl; // false
          */
-        constexpr bool empty() const noexcept { return m_size == 0; }
+        constexpr bool empty() const noexcept { return this->m_size == 0; }
 
         /**
          * @brief Returns the number of elements in the container
@@ -612,7 +559,7 @@ namespace stl
          * @example stl::vector<int> my_vector({1, 2, 3, 4, 5});
          *          std::cout << my_vector.size() << std::endl;  // 5
         */
-        constexpr size_type size() const noexcept { return m_size; }
+        constexpr size_type size() const noexcept { return this->m_size; }
 
         /**
          * @brief Returns the maximum number of elements the container is able to hold due to system or library implementation limitations => (2 ^ nativePointerBitWidth) / sizeof(dataType) - 1
@@ -705,7 +652,7 @@ namespace stl
         template <typename InputIt, typename = stl::RequireIterator<InputIt>> 
         iterator insert(const_iterator pos, InputIt first, InputIt last);
 
-        iterator insert(const_iterator pos, std::initializer_list<value_type> init);
+        iterator insert(const_iterator pos, std::initializer_list<value_type> ilist);
 
         /**
          * @brief This function resizes the container. While the m_size increses by 1 the m_capacity is calculated 
@@ -723,121 +670,25 @@ namespace stl
 
         void pop_back();
 
-        void erase(iterator position)
-        {
-            if (position >= end()) OUT_OF_BOUNDS_EXCEPTION
+        void erase(iterator pos);
 
-            for (iterator it = position; it != end() - 1; it++)
-                *it = *(it + 1);
+        void erase(iterator begin, iterator end);
 
-            --m_size;
-        }
+        void swap(vector& payload) noexcept;
 
-        void erase(iterator begin, iterator end)
-        {
-            if (begin >= end() || end >= end()) OUT_OF_BOUNDS_EXCEPTION
+        template <typename... Args> iterator emplace(iterator position, Args... args);
 
-            if (begin == end)
-            {
-                erase(begin);
-                return;
-            }
+        template <typename... Args> iterator emplace_back(Args... args);
 
-            size_type size_deleted = std::abs(begin - end);
-
-            m_size -= size_deleted;
-
-            if (begin > end)
-            {
-                iterator temp;
-
-                temp  = begin;
-                begin = end;
-                end   = temp;
-            }
-
-            iterator it_original = end;
-
-            for (iterator it = begin; it != end && it_original != end(); it++)
-                *it = *it_original++;
-        } 
-
-        void swap(vector& payload) noexcept
-        {
-            T*             temp_m_data           = this->m_data;
-            allocator_type temp_m_allocator      = this->m_alloc;
-            size_type      temp_m_size           = this->m_size;
-            size_type      temp_m_capacity       = this->m_capacity;
-
-            this->m_data              = payload.data();
-            this->m_alloc             = payload.get_allocator();
-            this->m_size              = payload.size();
-            this->m_capacity          = payload.capcacity();
-
-            payload.m_data            = temp_m_data;
-            payload.m_alloc           = temp_m_allocator;
-            payload.m_size            = temp_m_size;
-            payload.m_capacity        = temp_m_capacity;
-        }
-
-        template <typename... Args> iterator emplace(iterator position, Args... args)
-        {
-            int index = get_index(begin(), position); // int type bec for some reason the for breaks if unsigned int 
-            size_type old_size = m_size;
-
-            if (index >= m_size) OUT_OF_BOUNDS_EXCEPTION
-
-            m_size++;
-
-            if (m_size > m_capacity)
-                resize(m_size);
-
-            for (int i = old_size - 1; i >= index; i--)
-                m_data[i + 1] = m_data[i];
-
-            new (&m_data[index]) value_type(std::forward<Args>(args)...);
-
-            return &m_data[index];
-        }
-
-        template <typename... Args> iterator emplace_back(Args... args)
-        {
-            m_size++;
-
-            if (m_size > m_capacity)
-                resize(m_size);
-
-            new (&m_data[m_size - 1]) value_type(std::forward<Args>(args)...);
-
-            return &m_data[m_size - 1];
-        }
-
-        iterator find(value_type value)
-        {
-            for (iterator it = this->begin(); it != this->end(); it++)
-                if (*it == value)
-                    return it;
-
-            return nullptr;
-        }
+        iterator find(value_type value);
 
     private:
-        value_type*    m_data;
-        size_type      m_size;
-        size_type      m_capacity;
-        allocator_type m_alloc;
+        value_type*     m_data;
+        size_type       m_size;
+        size_type       m_capacity;
+        allocator_type  m_alloc;
 
-        constexpr size_type get_index(const_iterator it_1, const_iterator it_2) const noexcept { return std::abs(it_1 - it_2); }
-
-        void alloc_fallback()
-        {
-            for (size_type i = 0; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
-
-            this->m_alloc.deallocate(this->m_data, this->m_size);
-            this->m_size = this->m_capacity = 0;
-            this->m_data = nullptr;
-        }
+        void alloc_fallback();
     };
 
     /**

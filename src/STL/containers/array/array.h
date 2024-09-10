@@ -31,16 +31,15 @@
 #define __ARRAY_H__
 
 #include "../../algorithm/algorithm.h"
-#include "../../memory.h"
 #include "../../iterator.h"
 
 #include <initializer_list>
 #include <stdexcept>
 
+#include <array>
+
 #define OUT_OF_BOUNDS_EXCEPTION   throw std::out_of_range("Index out of bounds!\n");
 #define MEMORY_OVERFLOW_EXCEPTION throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
-
-#define META_SIZE sizeof(T)
 
 namespace stl
 {
@@ -55,8 +54,6 @@ namespace stl
         stl::size_t array_size
     > class array
     {
-        constexpr static int __SIZE__ = array_size * META_SIZE;
-
     public:
         typedef T                    value_type;
         typedef stl::size_t          size_type;
@@ -76,64 +73,27 @@ namespace stl
 
         array() noexcept { }
 
-        array(const array& other)
-        {
-            if (other.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
+        array(const array& other);
 
-            for (size_type i = 0; i < array_size; ++i)
-                m_data[i] = other.m_data[i];
-        }
-
-        array(std::initializer_list<value_type> init)
-        {
-            if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
-
-            const T* it = init.begin();
-            for (size_type i = 0; i < array_size; ++i)
-            {
-                new(static_cast<void*>(m_data + i)) T(*it);
-                ++it;
-            }
-        }
+        array(std::initializer_list<value_type> ilist);
         
-        array& operator=(const std::initializer_list<value_type>& init)
-        {
-            if (init.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
-
-            const T* it = init.begin();
-            for (size_type i = 0; i < array_size; ++i)
-            {
-                new(static_cast<void*>(m_data + i)) T(*it);
-                ++it;
-            }
-        }
+        array& operator=(const std::initializer_list<value_type>& ilist);
         
         /** 
          * @brief Overwrites every element of the array with the corresponding element of another array 
          * @param other array whose contents are used to override 'this'
         */
-        array& operator=(const array& other)
-        {
-            if (this != &other)
-            {
-                if (other.size() > array_size) MEMORY_OVERFLOW_EXCEPTION
-
-                for (size_type i = 0; i < array_size; ++i)
-                    m_data[i] = other[i];
-            }
-
-            return *this;
-        }
+        array& operator=(const array& other);
 
         constexpr size_type max_size() const noexcept { return array_size; }
 
-        constexpr size_type size() const noexcept     { return array_size; }
+        constexpr size_type size() const noexcept { return array_size; }
 
         constexpr bool empty() const noexcept { return array_size == 0; }
 
-        pointer data() noexcept { return m_data; } 
+        pointer data() noexcept { return this->m_data; } 
 
-        const_pointer data() const noexcept { return m_data; }  
+        const_pointer data() const noexcept { return this->m_data; }  
 
         /**
          * @brief Returns a reference to an element within the container
@@ -141,12 +101,7 @@ namespace stl
          * @return a reference to the requested element
          * @throws std::out_of_range if the index is out of bounds
          */
-        reference at(size_type index) 
-        { 
-            if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index]; 
-        }
+        reference at(size_type pos);
 
         /**
          * @brief Returns a constant reference to an element within the container
@@ -154,46 +109,37 @@ namespace stl
          * @return a constant reference to the requested element
          * @throws std::out_of_range if the index is out of bounds
          */
-        const_reference at(size_type index) const
-        {
-            if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index];
-        }
+        const_reference at(size_type pos) const;
         
         /** @brief Returns the first element of the array `data[0]` */
-        reference front() { return m_data[0]; }
+        reference front() { return *this->m_data; }
 
-        const_reference front() const { return m_data[0]; }
+        const_reference front() const { return *this->m_data; }
 
          /** @brief Returns the last element of the array `data[array_size - 1]` */
-        reference back() { return m_data[array_size - 1]; }
+        reference back() { return *(this->m_data + array_size - 1); }
 
-        const_reference back() const { return m_data[array_size - 1]; }
+        const_reference back() const { return *(this->m_data + array_size - 1); }
 
-        iterator begin() noexcept { return iterator(m_data); }
+        iterator begin() noexcept { return iterator(this->m_data); }
         
-        iterator end() noexcept   { return iterator(m_data + array_size); }
+        iterator end() noexcept   { return iterator(this->m_data + array_size); }
 
-        const_iterator cbegin() const noexcept { return const_iterator(m_data); }
+        const_iterator cbegin() const noexcept { return const_iterator(this->m_data); }
 
-        const_iterator cend() const noexcept   { return const_iterator(m_data + array_size); }
+        const_iterator cend() const noexcept   { return const_iterator(this->m_data + array_size); }
         
-        reverse_iterator rbegin() noexcept { return reverse_iterator(m_data + array_size); }
+        reverse_iterator rbegin() noexcept { return reverse_iterator(this->m_data + array_size); }
 
-        reverse_iterator rend() noexcept   { return reverse_iterator(m_data); }
+        reverse_iterator rend() noexcept   { return reverse_iterator(this->m_data); }
 
-        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(m_data + array_size); }
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(this->m_data + array_size); }
 
-        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(m_data); }
+        const_reverse_iterator crend() const noexcept   { return const_reverse_iterator(this->m_data); }
 
-        void fill(const value_type value)
-        {
-            for (size_type i = 0; i < array_size; ++i)
-                m_data[i] = value;
-        }
+        void fill(const value_type value);
 
-        void swap(array& arr) { stl::swap(arr.m_data, m_data); }
+        void swap(array& arr) { stl::swap(arr.m_data, this->m_data); }
 
         /**
          * @brief Returns a reference to the element at specified location index;
@@ -201,12 +147,7 @@ namespace stl
          * @return a reference to the requested element
          * @throws std::out_of_range if the index is out of bounds
          */
-        reference operator[](size_type index)
-        {
-            if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index];
-        }
+        reference operator[](size_type pos);
 
         /**
          * @brief Returns a constant reference to the element at specified location index;
@@ -214,12 +155,7 @@ namespace stl
          * @return a constant reference to the requested element
          * @throws std::out_of_range if the index is out of bounds
          */
-        constexpr const_reference operator[](size_type index) const
-        {
-            if (index >= array_size) OUT_OF_BOUNDS_EXCEPTION
-
-            return m_data[index];
-        }
+        constexpr const_reference operator[](size_type pos) const;
 
         ~array() = default;
 
@@ -297,5 +233,7 @@ namespace stl
     template <typename T, stl::size_t array_size>
     inline bool operator>=(const stl::array<T, array_size>& lhs, const stl::array<T, array_size>& rhs) { return !(lhs < rhs); }
 }
+
+#include "array.tcc"
 
 #endif // ARRAY_H

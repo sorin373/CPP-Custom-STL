@@ -29,7 +29,7 @@
 #ifndef __HASH_H__
 #define __HASH_H__
 
-#include "../algorithm/algorithm.h"
+#include "../traits/type_traits.h"
 #include "hash_bytes.h"
 
 namespace stl

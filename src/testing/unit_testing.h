@@ -9,10 +9,11 @@
 #define INT_MIN		(-INT_MAX-1)
 
 #define __TEST_ALL__             0 
-#define __TEST_ARRAY__           0 
-#define __TEST_VECTOR__          1
+#define __TEST_ARRAY__           1 
+#define __TEST_VECTOR__          0
 
 #define __TEST_FUNCTIONAL_HASH__ 0
+#define __TEST_TYPE_TRAITS__     0
 
 class node 
 {
@@ -183,12 +184,15 @@ static void test_vector()
         {1000000, 2000000, 3000000, 4000000},
         {2147483644, 2147483645, 2147483646, INT_MAX}
     });
+    
     vector_container_vector.__TEST__();
 }
 
 void INIT_UNIT_TESTS()
 {
+#if __TEST_TYPE_TRAITS__
     traits_test::__TEST__();
+#endif
 
 #if __TEST_FUNCTIONAL_HASH__
     test_hash_naive();

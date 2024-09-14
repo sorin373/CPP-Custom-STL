@@ -8,5 +8,6 @@
 // Cntainers
 #include "array_test.h"
 #include "vector_test.h"
+#include "forward_list_test.h"
 
 #endif

@@ -1,7 +1,8 @@
 #ifndef __ALLOCATOR_H__
 #define __ALLOCATOR_H__
 
-#include "../algorithm/algorithm.h"
+#include "../../cUtility/move.h"
+#include "../traits/type_traits.h"
 
 namespace stl
 {
@@ -9,20 +10,21 @@ namespace stl
     class allocator
     {
     public:
-        typedef T           value_type;
-        typedef stl::size_t size_type;
-
-        typedef T*          pointer;
-        typedef const T*    const_pointer;
-
-        typedef T&          reference;
-        typedef const T&    const_reference;
+        typedef T                   value_type;
+        typedef T*                  pointer;
+        typedef const T*            const_pointer;
+        typedef T&                  reference;
+        typedef const T&            const_reference;
+        typedef stl::size_t         size_type;
+        typedef stl::ptrdiff_t      difference_type;
+        typedef true_type           propagate_on_container_move_assignment;
         
-        template <typename U>
-        struct rebind
-        {
-            typedef allocator<U> other;
-        };
+        template <typename U> 
+        struct rebind { typedef allocator<U> other; };
+
+        typedef true_type is_always_equal;
+        
+
 
         pointer address(reference value) const { return &value; }
 
@@ -44,6 +46,9 @@ namespace stl
         void deallocate(pointer ptr, size_type size);
 
         void construct(pointer ptr, const_reference value);
+
+        template <typename... Args>
+        void construct(pointer ptr, Args&&... args);
 
         void destroy(pointer ptr) { ptr->~T(); }
     };

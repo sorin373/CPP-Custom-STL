@@ -31,6 +31,13 @@ namespace stl
     template <typename T>
     void allocator<T>::construct(pointer ptr, const_reference value)
     {
-        new(static_cast<void*>(ptr)) T(value);
+        ::new(static_cast<void*>(ptr)) T(value);
+    }
+
+    template <typename T>
+    template <typename... Args>
+    void allocator<T>::construct(pointer ptr, Args&&... args)
+    {
+        ::new(static_cast<void*>(ptr)) T(stl::forward<Args>(args)...);
     }
 }

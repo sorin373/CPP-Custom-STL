@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "algorithm/algorithm.h"
+#include "traits/type_traits.h"
 
 namespace stl
 {

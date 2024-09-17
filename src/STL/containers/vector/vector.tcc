@@ -62,7 +62,6 @@ namespace stl
 
                 this->m_alloc.deallocate(this->m_data, this->m_capacity);
             }
-                
 
             this->m_capacity = other.capacity();
             this->m_size = other.size();

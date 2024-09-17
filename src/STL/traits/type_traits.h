@@ -633,7 +633,7 @@ namespace stl
     ////
 
     template <typename...>
-    struct _void_t { typedef void type; };
+    struct __void_t { typedef void type; };
     
     /** */
     template <bool, typename T = void>
@@ -724,6 +724,51 @@ namespace stl
 
     template <typename From, typename To>
     struct is_convertible : public is_convertible_helper<From, To>::type { };
+
+
+    /// @c n-ary construction cases
+
+    struct do_is_nary_constructible_impl
+    {
+        template <typename T, typename... Args,  typename = decltype(T(declval<Args>()...))>
+        static true_type __test(int);
+
+        template <typename, typename>
+        static false_type __test(...);
+    };
+
+    template <typename T, typename... Args>
+    struct is_nary_constructible_impl : public do_is_nary_constructible_impl { typedef decltype(__test<T, Args...>(0)) type; };
+
+    template <typename T, typename... Args>
+    struct is_nart_constructible : public is_nary_constructible_impl<T, Args...>::type { static_assert(sizeof...(Args) > 1, "Only useful for > 1 arguments"); };
+
+
+
+
+
+    template <typename Default, typename AlwaysVoid, template <typename...> class Op, typename... Args>
+    struct detector
+    {
+        using value_t = false_type;
+        using type = Default;
+    };
+
+    template <typename Default, template <typename...> class Op, typename... Args>
+    struct detector<Default, __void_t<Op<Args...>>, Op, Args...>
+    {
+        using value_t = true_type;
+        using type = Op<Args...>;
+    };
+
+    template <typename Default, template <typename...> class Op, typename... Args>
+    using detector_or = detector<Default, void, Op, Args...>;
+
+    template <typename Default, template <typename...> class Op, typename... Args>
+    using detector_or_t = typename detector_or<Default, Op, Args...>::type;
+
+    template <template <typename...> class Default, template <typename...> class Op, typename... Args>
+    using __detected_or_t_ = detector_or_t<Default<Args...>, Op, Args...>;
 }
 
 #endif // TRAITS_H

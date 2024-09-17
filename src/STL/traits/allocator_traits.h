@@ -8,17 +8,17 @@ namespace stl
     struct allocator_traits
     {
         typedef Alloc                                           allocator_type;
-        typedef Alloc::value_type                               value_type;
-        typedef Alloc::pointer                                  pointer;
-        typedef Alloc::const_pointer                            const_pointer;
-        typedef Alloc::void_pointer                             void_pointer;
-        typedef Alloc::const_void_pointer                       const_void_pointer;
-        typedef Alloc::difference_type                          difference_type;
-        typedef Alloc::size_type                                size_type;
-        typedef Alloc::propagate_on_container_copy_assignment   propagate_on_container_copy_assignment;
-        typedef Alloc::propagate_on_container_move_assignment   propagate_on_container_move_assignment;
-        typedef Alloc::propagate_on_container_swap              propagate_on_container_swap;
-        typedef Alloc::is_always_equal                          is_always_equal;
+        typedef typename Alloc::value_type                               value_type;
+        typedef typename Alloc::pointer                                  pointer;
+        typedef typename Alloc::const_pointer                            const_pointer;
+        typedef typename Alloc::void_pointer                             void_pointer;
+        typedef typename Alloc::const_void_pointer                       const_void_pointer;
+        typedef typename Alloc::difference_type                          difference_type;
+        typedef typename Alloc::size_type                                size_type;
+        typedef typename Alloc::propagate_on_container_copy_assignment   propagate_on_container_copy_assignment;
+        typedef typename Alloc::propagate_on_container_move_assignment   propagate_on_container_move_assignment;
+        typedef typename Alloc::propagate_on_container_swap              propagate_on_container_swap;
+        typedef typename Alloc::is_always_equal                          is_always_equal;
 
         static pointer allocate(Alloc& __a, size_type __n) { return __a.allocate(__n); }
 
@@ -27,8 +27,8 @@ namespace stl
         static void deallocate(Alloc& __a, pointer __p, size_type __n) { __a.deallocate(__p, __n); }
 
         template <typename T, typename... Args>
-        static void construct(Alloc& __a, T* __p, Args&&... __args) 
-        -> decltype(_S_construct(__a, __p, stl::forward<Args>(__args)...)) { _S_construct(__a, __p, stl::forward<Args>(__args)...); }
+        static auto construct(Alloc& __a, T* __p, Args&&... __args) 
+        -> decltype(this->_S_construct(__a, __p, stl::forward<Args>(__args)...)) { _S_construct(__a, __p, stl::forward<Args>(__args)...); }
 
         template <typename T>
         static void destroy(Alloc& __a, T* __p) { _S_destroy(__a, __p, 0); }
@@ -71,7 +71,7 @@ namespace stl
         template <typename Alloc2>
         static Alloc2 _S_select(Alloc2& __a, ...) { return __a; }
 
-        template <typenaem Alloc2, typename T>
+        template <typename Alloc2, typename T>
         static auto _S_destroy(Alloc2& __a, T* __p, int)
         -> decltype(__a.destroy(__p)) { __a.destroy(__p); }
 

@@ -48,7 +48,7 @@ namespace stl
     struct random_access_iterator_tag : public bidirectional_iterator_tag {};
     
     /// @brief Primary template (fallback) | SFINAE Compatibility
-    template <typename Iterator, typename = _void_t<>>
+    template <typename Iterator, typename = __void_t<>>
     struct __iterator_traits { };
 
     /**
@@ -63,7 +63,7 @@ namespace stl
      * @typedef @c `iterator_category`  -  category of the iterator `[input / output / forward / bidirectional / random access]`
      */
     template <typename Iterator>
-    struct __iterator_traits<Iterator, _void_t<
+    struct __iterator_traits<Iterator, __void_t<
         typename Iterator::difference_type,
         typename Iterator::value_type,
         typename Iterator::pointer,

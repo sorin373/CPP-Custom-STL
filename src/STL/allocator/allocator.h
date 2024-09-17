@@ -23,8 +23,6 @@ namespace stl
         struct rebind { typedef allocator<U> other; };
 
         typedef true_type is_always_equal;
-        
-
 
         pointer address(reference value) const { return &value; }
 

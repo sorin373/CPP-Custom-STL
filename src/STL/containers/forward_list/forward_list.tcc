@@ -56,7 +56,111 @@ namespace stl
         this->m_clear_list();
         this->m_range_initialize(ilist.begin(), ilist.end());
     }
+
+    template <typename T, typename Allocator>
+    template <typename Compare>
+    void forward_list<T, Allocator>::merge(forward_list&& other, Compare comp)
+    {
+        Node* head = this->m_head;
+        Node* oth_head = other.m_head;
+        Node* new_head = this->m_create_node();
+        Node* ptr = new_head;
+
+        while (head->m_next && oth_head->m_next)
+        {
+            if (comp(*oth_head->m_next->get_m_data(), *head->m_next->get_m_data()))
+            {
+                ptr->m_next = other.m_head->m_next;
+                oth_head = oth_head->m_next;
+            }
+            else
+            {
+                ptr->m_next = head->m_next;
+                head = head->m_next;
+            }
+
+            ptr = ptr->m_next;
+        }
+
+        if (oth_head->m_next)
+            ptr->m_next = oth_head->m_next;
+
+        if (head->m_next)
+            ptr->m_next = head->m_next;
+
+        this->m_head->m_next = new_head->m_next;
+        other.m_head->m_next = nullptr;
+
+        this->m_destroy_node(new_head);
+    }
+
+    template <typename T, typename Allocator>
+    void forward_list<T, Allocator>::splice_after(const_iterator pos, forward_list&&, const_iterator it) noexcept
+    {
+        const_iterator __it = it;
+        ++__it;
+
+        if (pos == it || pos == __it)
+            return;
+
+        Node* current = const_cast<Node*>(pos.m_node);
+        this->m_insert_after(pos, 1, it.m_node);
+    }
     
+    template <typename T, typename Allocator>
+    typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::remove(const_reference value)
+    {
+        size_type count = 0;
+
+        Node* current = this->m_head;
+        Node* extra = nullptr;
+        
+        while (Node* node = static_cast<Node*>(current->m_next))
+        {
+            if (*node->get_m_data() == value)
+            {
+                if (node->get_m_data() != stl::addressof(value))
+                {
+                    this->m_erase_after(current);
+                    ++count;
+                    continue;
+                }
+                else
+                    extra = node;
+            }
+
+            current = current->m_next;
+        }
+
+        if (extra != nullptr)
+        {
+            this->m_erase_after(extra);
+            ++count;
+        }
+
+        return count;
+    }
+
+    template <typename T, typename Allocator>
+    template <typename UnaryPredicate>
+    typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::remove_if(UnaryPredicate pred)
+    {
+        Node* head = this->m_head;
+        size_type count = 0;
+
+        while (Node* node = head->m_next)
+        {
+            if (pred(*node->get_m_data()))
+            {
+                this->m_erase_after(head);
+                ++count;
+            }
+            else
+                head = head->m_next;
+        }
+
+        return count;
+    }
     
     /// @b Private members
 
@@ -151,7 +255,7 @@ namespace stl
         if (count == 0)
             return iterator(pos);
 
-        Node* current = const_cast<Node*>(pos->m_node);
+        Node* current = const_cast<Node*>(pos.m_node);
         Node* last_node = nullptr;
         
         for (; count > 0; (void)--count)
@@ -175,7 +279,7 @@ namespace stl
         if (first == last)
             return iterator(pos);
 
-        Node* current = const_cast<Node*>(pos->m_node);
+        Node* current = const_cast<Node*>(pos.m_node);
         Node* last_node = nullptr;
 
         for (; first != last; ++first)
@@ -206,19 +310,22 @@ namespace stl
     }
 
     template <typename T, typename Allocator>
-    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::m_erase_after(const_iterator pos)
+    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::m_erase_after(Node* pos)
     {
-        Node* current = const_cast<Node*>(pos->m_node), *temp = current->m_next;
-        current->m_next = current->m_next->m_next;
+        if (!pos || !pos->m_next)
+            return iterator(nullptr);
+
+        Node *temp = pos->m_next;
+        pos->m_next = temp->m_next;
         this->m_destroy_node(temp);
 
-        return iterator(current->m_next);
+        return iterator(pos->m_next);
     }
 
     template <typename T, typename Allocator>
     typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::m_erase_after(const_iterator first, const_iterator last)
     {
-        Node* current = const_cast<Node*>(first->m_node)->m_next;
+        Node* current = const_cast<Node*>(first.m_node)->m_next;
         
         while (current != last)
         {
@@ -228,8 +335,59 @@ namespace stl
             this->m_destroy_node(temp);
         }
 
-        first->m_next = last;
+        const_cast<Node*>(first.m_node)->m_next = last.m_node;
 
-        return iterator(last);
+        return iterator(last.m_node);
+    }
+
+    template <typename T, typename Allocator>
+    void forward_list<T, Allocator>::m_resize(size_type count, const_reference value)
+    {
+        iterator it = this->before_begin();
+        size_type len = 0;
+        
+        while (it.m_next() != this->end() && len < count)
+        {
+            ++it;
+            ++len;
+        }
+
+        if (len == count)
+            this->m_erase_after(it, this->end());
+        else
+            this->m_insert_after(it, count - len, value);
+    }
+
+    template <typename T, typename Allocator>
+    typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::m_splice_after(const_iterator pos, const_iterator first, const_iterator last)
+    {
+        Node* other = const_cast<Node*>(first.m_node);
+        Node* end = other;
+
+        while (end && end->m_next != last.m_node)
+            end = end->m_next;
+
+        if (end != other)
+            return iterator(this->m_insert_after(pos, other, end));
+        
+        return iterator(pos.m_node);
+    }
+
+    template <typename T, typename Allocator>
+    void forward_list<T, Allocator>::m_reverse_after() noexcept
+    {
+        Node* tail = this->m_head->m_next;
+
+        if (tail == nullptr)
+            return;
+
+        while (Node* temp = tail->m_next)
+        {
+            Node* keep = this->m_head->m_next;
+
+            this->m_head->m_next = temp;
+            tail->m_next = temp->m_next;
+            temp->m_next = keep;
+        }
     }
 }

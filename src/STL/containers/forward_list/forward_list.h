@@ -4,6 +4,7 @@
 #include "../../allocator/allocator.h"
 #include "../../iterator.h"
 #include "../../traits/allocator_traits.h"
+#include "../../../cUtility/stl_function.h"
 
 #include <initializer_list>
 
@@ -265,40 +266,64 @@ namespace stl
         void push_front(T&& value)
         { this->m_insert_after(this->before_begin(), stl::move(value)); }
 
+        template <typename... Args>
+        reference emplace_front(Args&&... args)
+        { return *this->m_insert_after(this->before_begin(), stl::forward<Args>(args)...); }
 
+        void pop_front() { this->m_erase_after(this->m_head); }
 
+        void resize(size_type count) { this->m_resize(count); };
 
-        // void assign(iterator begin, iterator end)
-        // {
-        //     if (begin == nullptr) return;
+        void resize(size_type count, const_reference value) { this->m_resize(count, value); };
 
-        //     node_iterator it_1 = begin.get_node();
-        //     node_iterator it_2 = end.get_node();
+        void swap(forward_list& other)
+        { 
+            if (this != &other)
+            {
+                stl::swap(this->m_head->m_next, other.m_head->m_next);
+                stl::swap(this->m_alloc, other.m_alloc);
+            }
+        }
 
-        //     while (it_1 != it_2)
-        //     {
-        //         push_front(it_1->get_m_data());
+        template <typename Compare>
+        void merge(forward_list&& other, Compare comp);
 
-        //         it_1 = it_1->m_next;
-        //     }
-        // }
+        void merge(forward_list&& other)
+        { this->merge(stl::move(other), stl::less<value_type>()); }
 
-        // void assign(const std::initializer_list<T> init)
-        // {
-        //     if (init.size() <= 0)
-        //         return;
+        void merge(forward_list& other)
+        { this->merge(stl::move(other)); }
 
-        //     for (pointer p = init.begin(); p != init.end(); p++)
-        //         push_front(*p);
-        // }
+        template <typename Compare>
+        void merge(forward_list& other, Compare comp)
+        { this->merge(stl::move(other), comp); }
 
-        // forward_list& operator=(const forward_list<value_type> list)                    // to fix
-        // {
-        //     for (const_iterator it = list.cbegin(); it != list.cend(); it++)
-        //         push_front(*it);
-        // }
+        void splice_after(const_iterator pos, forward_list&& other) noexcept
+        {
+            if (!other.empty())
+                this->m_splice_after(pos, other.before_begin(), other.end());
+        }
 
+        void splice_after(const_iterator pos, forward_list& other) noexcept
+        { this->splice_after(pos, stl::move(other)); }
 
+        void splice_after(const_iterator pos, forward_list&& other, const_iterator it) noexcept;
+
+        void splice_after(const_iterator pos, forward_list& other, const_iterator it) noexcept
+        { this->splice_after(pos, stl::move(other), it); }
+
+        void splice_after(const_iterator pos, forward_list&&, const_iterator first, const_iterator last) noexcept
+        { this->m_splice_after(pos, first, last); }
+
+        void splice_after(const_iterator pos, forward_list&, const_iterator first, const_iterator last) noexcept
+        { this->m_splice_after(pos, first, last); }
+        
+        size_type remove(const_reference value);
+
+        template <typename UnaryPredicate>
+        size_type remove_if(UnaryPredicate pred);
+
+        void reverse() noexcept { this->m_reverse_after(); }
 
     private:
         Node*            m_head;
@@ -328,9 +353,15 @@ namespace stl
         template <typename... Args>
         iterator m_insert_after(const_iterator pos, Args&&... args);
 
-        iterator m_erase_after(const_iterator pos);
+        iterator m_erase_after(Node* pos);
 
         iterator m_erase_after(const_iterator first, const_iterator last);
+
+        void m_resize(size_type count, const_reference value = value_type());
+
+        iterator m_splice_after(const_iterator pos, const_iterator first, const_iterator last);
+    
+        void m_reverse_after() noexcept;
     };
 }
 

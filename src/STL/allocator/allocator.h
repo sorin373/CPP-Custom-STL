@@ -3,6 +3,7 @@
 
 #include "../../cUtility/move.h"
 #include "../traits/type_traits.h"
+#include "../traits/allocator_traits.h"
 
 namespace stl
 {
@@ -18,6 +19,8 @@ namespace stl
         typedef stl::size_t         size_type;
         typedef stl::ptrdiff_t      difference_type;
         typedef true_type           propagate_on_container_move_assignment;
+        typedef void*               void_pointer;
+        typedef const void*         const_void_pointer;
         
         template <typename U> 
         struct rebind { typedef allocator<U> other; };
@@ -39,7 +42,7 @@ namespace stl
 
         size_type max_size() const noexcept;
 
-        pointer allocate(size_type size, const void* hint = nullptr);
+        pointer allocate(size_type size, const_void_pointer hint = nullptr);
 
         void deallocate(pointer ptr, size_type size);
 

@@ -3,130 +3,31 @@
 
 namespace stl
 {
-    template <typename T, typename Allocator>
-    vector<T, Allocator>::vector(size_type count, const T& value, const Allocator& alloc)
-        : m_capacity(count), m_size(count), m_alloc(alloc), m_data(nullptr)
-    {
-        if (count > 0)
-        {
-            this->m_data = this->m_alloc.allocate(count);
-            
-            try
-            {
-                for (size_type i = 0; i < this->m_size; ++i)
-                    this->m_alloc.construct(this->m_data + i, value);
-            }
-            catch(...)
-            {
-                this->alloc_fallback();
-                throw;
-            }
-        }
-    }
-
-    template <typename T, typename Allocator>
-    vector<T, Allocator>::vector(std::initializer_list<value_type> ilist, const Allocator& alloc)
-        : m_alloc(alloc), m_size(ilist.size()), m_capacity(ilist.size()), m_data(nullptr)
-    {
-        if (this->m_size > 0)
-        {
-            this->m_data = this->m_alloc.allocate(this->m_size);
-            
-            try
-            {
-                const_iterator it = ilist.begin();
-
-                for (size_type i = 0; i < this->m_size; ++i)
-                {
-                    this->m_alloc.construct(this->m_data + i, *it);
-                    ++it;
-                }
-            }
-            catch(...)
-            {
-                this->alloc_fallback();
-                throw;
-            }
-        }
-    }
-
-    template <typename T, typename Allocator>
-    vector<T, Allocator> &vector<T, Allocator>::operator=(const vector &other)
-    {
-        if (this != &other)
-        {
-            if (this->m_data != nullptr)
-            {
-                for (size_type i = 0; i < this->m_size; ++i)
-                    this->m_alloc.destroy(this->m_data + i);
-
-                this->m_alloc.deallocate(this->m_data, this->m_capacity);
-            }
-
-            this->m_capacity = other.capacity();
-            this->m_size = other.size();
-            this->m_alloc = other.get_allocator();
-
-            this->m_data = m_alloc.allocate(this->m_size);
-
-            for (size_type i = 0; i < this->m_size; ++i)
-                m_alloc.construct(this->m_data + i, other[i]);
-        }
-
-        return *this;
-    }
-
-    template <typename T, typename Allocator>
-    vector<T, Allocator> &vector<T, Allocator>::operator=(const std::initializer_list<T> ilist)
-    {
-        if (this->m_data != nullptr)
-        {
-            for (size_type i = 0; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
-
-            this->m_alloc.deallocate(this->m_data, this->m_capacity);
-        }
-
-        this->m_capacity = this->m_size = ilist.size();
-
-        this->m_data = this->m_alloc.allocate(this->m_size);
-
-        const value_type *it = ilist.begin();
-
-        for (size_type i = 0; i < this->m_size; ++i)
-        {
-            this->m_alloc.construct(m_data + i, *it);
-            ++it;
-        }
-    }
-
     template <typename T, typename Allocator> 
     void vector<T, Allocator>::assign(size_type count, const_reference value)
     {
         if (this->m_data != nullptr)
         {
-            for (size_type i = 0; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
-            
-            m_alloc.deallocate(this->m_data, this->m_capacity);
-            this->m_size = this->m_capacity = 0;
+            if (count > this->m_capacity)
+                try { this->reserve(count); }
+                catch(...)
+                {
+                    this->alloc_fallback();
+                    throw;
+                }
+
+            this->clear();
+        }
+        else if (count > 0)
+        {
+            this->m_data = this->m_alloc.allocate(count);
+            this->m_capacity = count;
         }
 
         if (count > 0)
         {
-            this->m_size = this->m_capacity = count;
-            this->m_data = this->m_alloc.allocate(count);
-            
-            try 
-            {
-                for (size_type i = 0; i < count; ++i)
-                    this->m_alloc.construct(this->m_data + i, value);
-            }
-            catch(...)
-            {
-                this->alloc_fallback();
-                throw;
-            }
+            this->m_size = count;
+            this->m_default_initialize(count, value);
         }
     }
 
@@ -134,67 +35,41 @@ namespace stl
     template <typename InputIt, typename>
     void vector<T, Allocator>::assign(InputIt first, InputIt last)
     {
-        if (first == nullptr || last == nullptr)
+        if (first == last) 
             return;
-
-        if (this->m_data != nullptr)
-        {
-            for (size_type i = 0; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
-            
-            m_alloc.deallocate(this->m_data, this->m_capacity);
-            this->m_size = this->m_capacity = 0;
-        }
 
         difference_type size = stl::distance(first, last);
 
-        this->m_size = this->m_capacity = size;
-        this->m_data = this->m_alloc.allocate(size);
-        
-        try
-        {
-            for (size_type i = 0; i < size; ++i)
-            {   
-                this->m_alloc.construct(this->m_data + i, *first);
-                ++first;
-            }   
-        }
-        catch(...)
-        {
-            this->alloc_fallback();
-            throw;
-        }
-    }
-
-    template <typename T, typename Allocator>
-    void vector<T, Allocator>::assign(std::initializer_list<value_type> ilist)
-    {
         if (this->m_data != nullptr)
         {
-            for (size_type i = 0; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
+            if (size > this->m_capacity)
+                try { this->reserve(size); }
+                catch(...)
+                {
+                    this->alloc_fallback();
+                    throw;
+                }
 
-            m_alloc.deallocate(this->m_data, this->m_capacity);
-            this->m_size = this->m_capacity = 0;
+            this->clear();
         }
-
-        this->m_size = this->m_capacity = ilist.size();
-        this->m_data = this->m_alloc.allocate(this->m_size);
+        else
+        {
+            this->m_data = this->m_alloc.allocate(size);
+            this->m_capacity = size;
+        }
 
         try
         {
-            const_iterator it = ilist.begin();
-            for (size_type i = 0; i < this->m_size; ++i)
-            {
-                this->m_alloc.construct(this->m_data + i, *it);
-                ++it;
-            }
+            for (size_type i = 0; first != last; ++i, ++first)
+                this->m_alloc.construct(this->m_data + i, *first);
         }
         catch(...)
         {
             this->alloc_fallback();
             throw;
         }
+
+        this->m_size = size;
     }
 
     template <typename T, typename Allocator>
@@ -208,6 +83,9 @@ namespace stl
 
         value_type *temp = this->m_alloc.allocate(new_cap);
 
+        for (size_type i = 0; i < this->m_size; ++i)
+            this->m_alloc.construct(temp + i, stl::move(*(this->m_data + i)));
+
         this->m_alloc.deallocate(this->m_data, this->m_capacity);
         this->m_capacity = new_cap;
         this->m_data = temp;
@@ -220,8 +98,9 @@ namespace stl
             return;
 
         value_type *temp = this->m_alloc.allocate(this->m_size);
-    
-        memcpy(temp, this->m_data, this->m_size * sizeof(value_type));
+
+        for (size_type i = 0; i < this->m_size; ++i)
+            this->m_alloc.construct(temp, *(this->m_data + i));
 
         this->m_alloc.deallocate(this->m_data, this->m_capacity);
         this->m_capacity = this->m_size;
@@ -235,27 +114,6 @@ namespace stl
             this->m_alloc.destroy(this->m_data + i);
 
         this->m_size = 0;
-    }
-
-    template <typename T, typename Allocator>
-    typename vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator pos, const_reference value)
-    {
-        difference_type index = stl::distance(cbegin(), pos);
-
-        if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
-
-        ++this->m_size;
-
-        if (this->m_size > this->m_capacity)
-            this->resize(this->m_size);
-
-        for (int i = this->m_size - 1; i > index; --i)
-            this->m_data[i] = this->m_data[i - 1];
-
-        this->m_alloc.destroy(this->m_data + index);
-        this->m_alloc.construct(this->m_data + index, value);
-
-        return iterator(this->m_data + index);
     }
 
     template <typename T, typename Allocator>
@@ -293,7 +151,7 @@ namespace stl
         if (first == last)
             return iterator(pos);
 
-        difference_type index = stl::distance(cbegin(), pos);
+        difference_type index = stl::distance(this->cbegin(), pos);
 
         if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
 
@@ -307,75 +165,13 @@ namespace stl
         for (int i = this->m_size - add_size; i >= index; --i)
             this->m_data[i + add_size - 1] = this->m_data[i - 1];
 
-        for (int i = index, N = index + add_size; i < N; ++i)
+        for (int i = index; first != last; ++i, ++first)
         {
             this->m_alloc.destroy(this->m_data + i);
             this->m_alloc.construct(this->m_data + i, *first);
-
-            ++first;
         }
 
         return iterator(this->m_data + index);
-    }
-
-    template <typename T, typename Allocator>
-    typename vector<T, Allocator>::iterator vector<T, Allocator>::insert(const_iterator pos, std::initializer_list<value_type> ilist)
-    {
-        int add_size = ilist.size();
-        
-        if (add_size == 0)
-            return iterator(pos);
-
-        difference_type index = stl::distance(cbegin(), pos);
-
-        if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
-
-        this->m_size += add_size;
-
-        if (this->m_size > this->m_capacity)
-            this->resize(this->m_size);
-
-        for (int i = this->m_size - add_size; i >= index; --i)
-            this->m_data[i + add_size - 1] = this->m_data[i - 1];
-
-        const_iterator it = ilist.begin();
-        for (int i = index, N = index + add_size; i < N; ++i)
-        {
-            this->m_alloc.destroy(this->m_data + i);
-            this->m_alloc.construct(this->m_data + i, *it);
-
-            ++it;
-        }
-
-        return iterator(this->m_data + index);
-    }
-
-    template <typename T, typename Allocator>
-    void vector<T, Allocator>::resize(size_type count)
-    {
-        if (count < this->m_size)
-        {
-            for (size_type i = count; i < this->m_size; ++i)
-                this->m_alloc.destroy(this->m_data + i);
-
-            this->m_size = count;
-            
-            return;
-        }
-        else if (count <= this->m_capacity)
-            return;
-
-        size_type new_capacity = count + count / 2 + 1;
-
-        value_type *temp = this->m_alloc.allocate(new_capacity);
-
-        stl::memcpy(temp, this->m_data, this->m_size * sizeof(value_type));
-
-        this->m_alloc.deallocate(this->m_data, this->m_capacity);
-        
-        this->m_size = count;
-        this->m_capacity = new_capacity;
-        this->m_data = temp;
     }
 
     template <typename T, typename Allocator>
@@ -392,19 +188,25 @@ namespace stl
         }
         else if (count <= this->m_capacity)
             return;
+        else
+        {
+            size_type new_capacity = count + count / 2 + 1;
+            value_type *temp = this->m_alloc.allocate(new_capacity);
 
-        size_type new_capacity = count + count / 2 + 1;
+            for (size_type i = 0; i < this->m_size; ++i)
+            {
+                this->m_alloc.construct(temp + i, stl::move(*(this->m_data + i)));
+                this->m_alloc.destroy(this->m_data + i);
+            }
 
-        value_type *temp = this->m_alloc.allocate(new_capacity);
-        
-        stl::memcpy(temp, this->m_data, this->m_size * sizeof(value_type));
+            for (size_type i = this->m_size; i < count; ++i)
+                this->m_alloc.construct(temp + i, value_type());
 
-        for (size_type i = this->m_size; i < count; ++i)
-            this->m_alloc.construct(temp + i, value);
-
-        this->m_capacity = new_capacity;
-        this->m_size = count;
-        this->m_data = temp;
+            this->m_alloc.deallocate(this->m_data, this->m_capacity);
+            this->m_data = temp;
+            this->m_size = count;
+            this->m_capacity = new_capacity;
+        }
     }
 
     template <typename T, typename Allocator>
@@ -429,19 +231,6 @@ namespace stl
     }
 
     template <typename T, typename Allocator>
-    void vector<T, Allocator>::erase(iterator pos)
-    {
-        iterator _end = this->end();
-
-        if (pos >= _end) OUT_OF_BOUNDS_EXCEPTION
-
-        for (iterator it = pos; it != _end - 1; ++it)
-            *it = *(it + 1);
-
-        --this->m_size;
-    }
-
-    template <typename T, typename Allocator>
     void vector<T, Allocator>::erase(iterator begin, iterator end)
     {
         iterator _end = this->end();
@@ -449,36 +238,26 @@ namespace stl
         if (begin >= _end || end >= _end) OUT_OF_BOUNDS_EXCEPTION
 
         if (begin == end)
-        {
-            this->erase(begin);
             return;
-        }
 
         size_type deleted_size = stl::distance(begin, end);
 
-        this->m_size -= deleted_size;
-
         for (iterator it = begin, it_org = end; it != end && it_org != _end; ++it, ++it_org)
             *it = *it_org;
+
+        for (iterator it = _end - deleted_size; it != end; ++it)
+            this->m_alloc.destroy(it);
+
+        this->m_size -= deleted_size;
     }
 
     template <typename T, typename Allocator>
     void vector<T, Allocator>::swap(vector& other) noexcept
     {
-        value_type* temp_m_data         = this->m_data;
-        allocator_type temp_m_allocator = this->m_alloc;
-        size_type temp_m_size           = this->m_size;
-        size_type temp_m_capacity       = this->m_capacity;
-
-        this->m_data                    = other.m_data;
-        this->m_alloc                   = other.m_alloc;
-        this->m_size                    = other.m_size;
-        this->m_capacity                = other.m_capacity;
-                
-        other.m_data                    = temp_m_data;
-        other.m_alloc                   = temp_m_allocator;
-        other.m_size                    = temp_m_size;
-        other.m_capacity                = temp_m_capacity;
+        stl::swap(this->m_data,     other.m_data);
+        stl::swap(this->m_alloc,    other.m_alloc);
+        stl::swap(this->m_size,     other.m_size);
+        stl::swap(this->m_capacity, other.m_capacity);
     }
     
     template <typename T, typename Allocator>
@@ -539,5 +318,46 @@ namespace stl
         this->m_alloc.deallocate(this->m_data, this->m_size);
         this->m_size = this->m_capacity = 0;
         this->m_data = nullptr;
+    }
+
+    template <typename T, typename Allocator>
+    void vector<T, Allocator>::m_default_initialize(size_type count, const_reference value)
+    {
+        if (count > 0)
+        {
+            this->m_data = this->m_alloc.allocate(count);
+
+            try
+            {
+                for (size_type i = 0; i < count; ++i)
+                    this->m_alloc.construct(this->m_data + i, value);
+            }
+            catch(...)
+            {
+                this->alloc_fallback();
+                throw;
+            }
+        }
+    }
+
+    template <typename T, typename Allocator>
+    template <typename InputIt>
+    void vector<T, Allocator>::m_range_initialize(InputIt first, InputIt last)
+    {
+        if (this->m_size > 0)
+        {
+            this->m_data = this->m_alloc.allocate(this->m_size);
+                        
+            try
+            {
+                for (size_type i = 0; first != last; ++first, ++i)
+                    this->m_alloc.construct(this->m_data + i, *first);
+            }
+            catch(...)
+            {
+                this->alloc_fallback();
+                throw;
+            }
+        }
     }
 }

@@ -161,6 +161,46 @@ namespace stl
 
         return count;
     }
+
+    template <typename T, typename Allocator>
+    template <typename BinaryPredicate>
+    typename forward_list<T, Allocator>::size_type forward_list<T, Allocator>::unique(BinaryPredicate pred)
+    {
+        size_type count = 0;
+
+        iterator first = this->begin();
+        iterator last = this->end();
+
+        if (first == last)
+            return 0;
+
+        iterator next = first;
+        while (++next != last)
+        {
+            if (pred(*first, *next))
+            {
+                ++count;
+                this->erase_after(first);
+            }
+            else
+                first = next;
+
+            next = first;
+        }
+
+        return count;
+    }
+
+    template <typename T, typename Allocator>
+    template <typename Compare>
+    void forward_list<T, Allocator>::sort(Compare comp)
+    {
+        Node* list = this->m_head->m_next;
+        
+        if (list == nullptr)
+            return;
+    }
+
     
     /// @b Private members
 

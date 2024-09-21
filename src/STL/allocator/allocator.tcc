@@ -10,7 +10,7 @@ namespace stl
     }
 
     template <typename T>
-    typename allocator<T>::pointer allocator<T>::allocate(size_type size, const void* hint)
+    typename allocator<T>::pointer allocator<T>::allocate(size_type size, const_void_pointer hint)
     {
         if (size == 0)
             return nullptr;

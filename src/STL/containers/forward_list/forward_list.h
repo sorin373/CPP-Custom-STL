@@ -325,6 +325,16 @@ namespace stl
 
         void reverse() noexcept { this->m_reverse_after(); }
 
+        template <typename BinaryPredicate>
+        size_type unique(BinaryPredicate pred);
+
+        void unique() { this->unique(stl::equal_to<value_type>()); }
+
+        template <typename Compare>
+        void sort(Compare comp);
+
+        void sort() { this->sort(stl::less<value_type>()); }
+
     private:
         Node*            m_head;
         allocator_type   m_alloc;

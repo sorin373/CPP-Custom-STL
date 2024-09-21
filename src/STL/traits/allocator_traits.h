@@ -7,7 +7,7 @@ namespace stl
     template <typename Alloc>
     struct allocator_traits
     {
-        typedef Alloc                                           allocator_type;
+        typedef Alloc                                                    allocator_type;
         typedef typename Alloc::value_type                               value_type;
         typedef typename Alloc::pointer                                  pointer;
         typedef typename Alloc::const_pointer                            const_pointer;
@@ -15,25 +15,10 @@ namespace stl
         typedef typename Alloc::const_void_pointer                       const_void_pointer;
         typedef typename Alloc::difference_type                          difference_type;
         typedef typename Alloc::size_type                                size_type;
-        typedef typename Alloc::propagate_on_container_copy_assignment   propagate_on_container_copy_assignment;
+        // typedef typename Alloc::propagate_on_container_copy_assignment   propagate_on_container_copy_assignment;
         typedef typename Alloc::propagate_on_container_move_assignment   propagate_on_container_move_assignment;
-        typedef typename Alloc::propagate_on_container_swap              propagate_on_container_swap;
+        // typedef typename Alloc::propagate_on_container_swap              propagate_on_container_swap;
         typedef typename Alloc::is_always_equal                          is_always_equal;
-
-        static pointer allocate(Alloc& __a, size_type __n) { return __a.allocate(__n); }
-
-        static pointer allocate(Alloc& __a, size_type __n, const_void_pointer __hint) { return _S_allocate(__a, __n, __hint, 0); }
-
-        static void deallocate(Alloc& __a, pointer __p, size_type __n) { __a.deallocate(__p, __n); }
-
-        template <typename T, typename... Args>
-        static auto construct(Alloc& __a, T* __p, Args&&... __args) 
-        -> decltype(this->_S_construct(__a, __p, stl::forward<Args>(__args)...)) { _S_construct(__a, __p, stl::forward<Args>(__args)...); }
-
-        template <typename T>
-        static void destroy(Alloc& __a, T* __p) { _S_destroy(__a, __p, 0); }
-        
-        static Alloc select_on_container_copy_construction(const Alloc& __rhs) { return _S_select(__rhs, 0); }
 
     private:
         template <typename Alloc2>
@@ -77,5 +62,21 @@ namespace stl
 
         template <typename Alloc2, typename T>
         static void _S_destroy(Alloc2&, T* __p, ...) { __p->~T(); }
+
+    public:
+        static pointer allocate(Alloc& __a, size_type __n) { return __a.allocate(__n); }
+
+        static pointer allocate(Alloc& __a, size_type __n, const_void_pointer __hint) { return _S_allocate(__a, __n, __hint, 0); }
+
+        static void deallocate(Alloc& __a, pointer __p, size_type __n) { __a.deallocate(__p, __n); }
+
+        template <typename T, typename... Args>
+        static auto construct(Alloc& __a, T* __p, Args&&... __args) 
+        -> decltype(this->_S_construct(__a, __p, stl::forward<Args>(__args)...)) { _S_construct(__a, __p, stl::forward<Args>(__args)...); }
+
+        template <typename T>
+        static void destroy(Alloc& __a, T* __p) { _S_destroy(__a, __p, 0); }
+        
+        static Alloc select_on_container_copy_construction(const Alloc& __rhs) { return _S_select(__rhs, 0); }
     };
 }

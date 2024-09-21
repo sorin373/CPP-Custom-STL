@@ -39,6 +39,7 @@
 #define __VECTOR_TEST_H__
 
 #include "../STL/containers/vector/vector.h"
+#include "../STL/traits/type_traits.h"
 
 #include <iostream>
 #include <cassert>
@@ -121,11 +122,17 @@ namespace my_alloc
     class custom_tracking_allocator
     {
     public:
-        typedef T              value_type;
-        typedef T*             pointer;
-        typedef const T*       const_pointer;
-        typedef stl::size_t    size_type; 
-        typedef const T&       const_reference;
+        typedef T                   value_type;
+        typedef T*                  pointer;
+        typedef const T*            const_pointer;
+        typedef T&                  reference;
+        typedef const T&            const_reference;
+        typedef stl::size_t         size_type;
+        typedef stl::ptrdiff_t      difference_type;
+        typedef stl::true_type      propagate_on_container_move_assignment;
+        typedef stl::true_type      is_always_equal;
+        typedef void*               void_pointer;
+        typedef const void*         const_void_pointer;
 
         constexpr custom_tracking_allocator() noexcept : m_allocs(0) { }
         ~custom_tracking_allocator() = default;

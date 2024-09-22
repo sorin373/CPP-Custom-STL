@@ -3,8 +3,6 @@
 
 #include "all.h"
 
-#include <limits>
-
 #include <complex>
 
 #define INT_MAX		2147483647

@@ -122,18 +122,15 @@ namespace stl
         if (count == 0)
             return iterator(pos);
 
-        difference_type index = stl::distance(cbegin(), pos);
+        difference_type index = stl::distance(this->cbegin(), pos);
 
         if (index > this->m_size) OUT_OF_BOUNDS_EXCEPTION
 
-        this->m_size += count;
+        if (this->m_size + count > this->m_capacity)
+            this->resize(this->m_size + count);
 
-        if (this->m_size > this->m_capacity)
-            this->resize(this->m_size);
-
-        // move all items `size` spaces to the right
-        for (int i = this->m_size - count; i > index; --i)
-            this->m_data[i + count - 1] = this->m_data[i - 1];
+        for (int i = this->m_size - count - 1; i >= index; --i)
+            this->m_data[i + count] = stl::move(this->m_data[i]);
             
         for (int i = index, N = index + count; i < N; ++i)
         {
@@ -157,13 +154,11 @@ namespace stl
 
         difference_type add_size = stl::distance(first, last);
 
-        this->m_size += add_size;
+        if (this->m_size + add_size > this->m_capacity)
+            this->resize(this->m_size + add_size);
 
-        if (this->m_size > this->m_capacity)
-            this->resize(this->m_size);
-
-        for (int i = this->m_size - add_size; i >= index; --i)
-            this->m_data[i + add_size - 1] = this->m_data[i - 1];
+        for (int i = this->m_size - add_size - 1; i >= index; --i)
+            this->m_data[i + add_size] = stl::move(this->m_data[i]);
 
         for (int i = index; first != last; ++i, ++first)
         {

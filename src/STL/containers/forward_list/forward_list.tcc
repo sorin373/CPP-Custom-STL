@@ -195,10 +195,31 @@ namespace stl
     template <typename Compare>
     void forward_list<T, Allocator>::sort(Compare comp)
     {
-        Node* list = this->m_head->m_next;
+        Node* head = this->m_head->m_next;
         
-        if (list == nullptr)
+        if (head == nullptr)
             return;
+
+        bool is_sorted = true;
+
+        do
+        {
+            is_sorted = true;
+            Node* list = head;
+
+            while (list->m_next != nullptr)
+            {
+                value_type* lhs = list->get_m_data(), *rhs = list->m_next->get_m_data();
+
+                if (!comp(*lhs, *rhs))
+                {
+                    stl::swap(*lhs, *rhs);
+                    is_sorted = false;
+                }
+
+                list = list->m_next;
+            }
+        } while (!is_sorted);
     }
 
     
@@ -429,5 +450,25 @@ namespace stl
             tail->m_next = temp->m_next;
             temp->m_next = keep;
         }
+    }
+
+    template <typename T, typename Allocator>
+    bool operator==(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    {
+        fwd_list_const_iterator<T> lit = lhs.cbegin(), rit = rhs.cbegin();
+
+        while (lit != lhs.cend() && rit != rhs.cend())
+        {
+            if (*lit != *rit)
+                return false;
+
+            ++lit;
+            ++rit;
+        }
+
+        if (lit != lhs.end() || rit != rhs.end())
+            return false;
+
+        return true;
     }
 }

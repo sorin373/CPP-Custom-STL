@@ -98,13 +98,13 @@ namespace stl
     void swap(T (&a)[N], T (&b)[N])
     {
         for (size_t i = 0; i < N; ++i)
-            swap(a[i], b[i]);
+            stl::swap(a[i], b[i]);
     }
 
     template <typename T>
     typename enable_if<is_trivially_copyable<T>::value, T*>::type copy(const T* first, const T* last, T* d_first)
     {
-        memcpy(d_first, first, sizeof(T) * (last - first));
+        stl::memcpy(d_first, first, sizeof(T) * (last - first));
         return d_first + (last - first);
     }
 

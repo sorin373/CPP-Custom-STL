@@ -8,8 +8,8 @@ This is my custom implementation of the STL containers and other generic utility
 
 - [array.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/array/array.h) 
 - [vector.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/vector/vector.h)
-- [forward_list.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/forward_list.h)
-- [unordered_map.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/unordered_map.h)
+- [forward_list.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/forward_list/forward_list.h)
+- [unordered_map.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/containers/unordered_map/unordered_map.h)
 
 ## Iterators
 - [iterator.h](https://github.com/sorin373/CPP-Custom-STL/blob/main/src/STL/iterator.h)

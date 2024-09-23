@@ -39,133 +39,13 @@
 #define __VECTOR_TEST_H__
 
 #include "../STL/containers/vector/vector.h"
-#include "../STL/traits/type_traits.h"
-
-#include <iostream>
-#include <cassert>
-
-#define TEST_CASE(C) { if (!(C)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; else { std::cout << "Test case on line " << __LINE__ << " passed successfully!\n"; ++COUNT; } }
-#define __check_result_no_return__(X, Y) { assert(X == Y); }
-#define __check_result__(X, Y) { assert(X == Y); return true; }
-#define __send_console_msg__(VAR) { std::cerr << VAR << ' '; }
-#define __debug_output_msg__ 0
+#include "custom_alloc_TT.h"
+#include "UTconfig.h"
 
 #define __N_ALLOCS 10000
 
 #define INT_MAX 2147483647
 #define INT_MIN	(-INT_MAX-1)
-
-        /****************************
-        * CUSTOM TESTING ALLOCATORS *
-        ****************************/
-
-namespace my_alloc
-{
-    template <typename T>
-    class custom_allocator_new
-    {
-    public:
-        typedef T              value_type;
-        typedef T*             pointer;
-        typedef const T*       const_pointer;
-        typedef stl::size_t    size_type; 
-        typedef const T&       const_reference;
-
-        custom_allocator_new() = default;
-        ~custom_allocator_new() = default;
-
-        pointer allocate(size_type size)
-        {
-            pointer ptr = static_cast<pointer>(::operator new(sizeof(T) * size));
-
-            if (!ptr) throw std::bad_alloc();
-
-            return ptr;
-        }
-
-        void deallocate(pointer p, size_type size) { ::operator delete(p); }
-
-        size_type max_size() const { return std::numeric_limits<size_type>::max(); }
-
-        void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
-
-        void destroy(pointer ptr) { ptr->~T(); }
-    };
-
-    template <typename T>
-    class custom_allocator_malloc
-    {
-    public:
-        typedef T              value_type;
-        typedef T*             pointer;
-        typedef const T*       const_pointer;
-        typedef stl::size_t    size_type; 
-
-        custom_allocator_malloc() = default;
-        ~custom_allocator_malloc() = default;
-
-        pointer allocate(size_type size)
-        {
-            pointer ptr = static_cast<pointer>(malloc(sizeof(T) * size));
-
-            if (!ptr) throw std::runtime_error("malloc() failed!\n");
-
-            return ptr;
-        }
-
-        void deallocate(pointer p, size_type size) { free(static_cast<void *>(p)); }
-
-        size_type max_size() const { return std::numeric_limits<size_type>::max(); }
-    };
-
-    template <typename T>
-    class custom_tracking_allocator
-    {
-    public:
-        typedef T                   value_type;
-        typedef T*                  pointer;
-        typedef const T*            const_pointer;
-        typedef T&                  reference;
-        typedef const T&            const_reference;
-        typedef stl::size_t         size_type;
-        typedef stl::ptrdiff_t      difference_type;
-        typedef stl::true_type      propagate_on_container_move_assignment;
-        typedef stl::true_type      is_always_equal;
-        typedef void*               void_pointer;
-        typedef const void*         const_void_pointer;
-
-        constexpr custom_tracking_allocator() noexcept : m_allocs(0) { }
-        ~custom_tracking_allocator() = default;
-
-        pointer allocate(size_type size)
-        {
-            pointer ptr = static_cast<pointer>(malloc(sizeof(T) * size));
-
-            if (!ptr) throw std::runtime_error("malloc() failed!\n");
-
-            m_allocs += size;
-
-            return ptr;
-        }
-
-        void deallocate(pointer p, size_type size) { free(static_cast<void *>(p)); }
-
-        size_type max_size() const { return std::numeric_limits<size_type>::max(); }
-
-        size_type get_allocs() const noexcept { return this->m_allocs; }
-
-        void construct(pointer ptr, const_reference value) { new(static_cast<void*>(ptr)) T(value); }
-
-        void destroy(pointer ptr) { ptr->~T(); }
-
-    private:
-        size_type m_allocs;
-    };
-}
-
-        /******************************************************************************************************* */
-        /*                                      GENERIC_TESTING_CONTAINER                                        */
-        /******************************************************************************************************* */
 
 template <
     typename T, 

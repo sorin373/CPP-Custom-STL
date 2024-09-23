@@ -18,6 +18,8 @@ namespace stl
         fwd_list_node(T data) : m_storage(data), m_next(nullptr) { }
 
         T* get_m_data() noexcept { return &this->m_storage; } 
+        
+        const T* get_m_data() const noexcept { return &this->m_storage; }
 
         fwd_list_node<T>* m_next;
 
@@ -76,9 +78,8 @@ namespace stl
     template <typename T>
     struct fwd_list_const_iterator
     {
-        typedef fwd_list_iterator<T>            Self;
+        typedef fwd_list_const_iterator<T>      Self;
         typedef const fwd_list_node<T>          Node;
-        typedef fwd_list_iterator<T>            iterator;
 
         typedef T                               value_type;
         typedef const T*                        pointer;
@@ -86,15 +87,15 @@ namespace stl
         typedef stl::ptrdiff_t                  difference_type;
         typedef stl::forward_iterator_tag       iterator_category;
 
-        fwd_list_const_iterator() noexcept : m_node() { }
-        
-        explicit fwd_list_const_iterator(const Node* __n) noexcept : m_node(__n) { }
+        fwd_list_const_iterator() noexcept : m_node(nullptr) { }
 
-        fwd_list_const_iterator(const iterator& __iter) noexcept : m_node(__iter.m_node) { }
+        explicit fwd_list_const_iterator(Node* __n) noexcept : m_node(__n) { }
+
+        fwd_list_const_iterator(const fwd_list_iterator<T>& __iter) noexcept : m_node(__iter.m_node) { }
 
         reference operator*() const noexcept { return *static_cast<Node*>(this->m_node)->get_m_data(); }
 
-        pointer operator->() const noexcept { return static_cast<Node*>(this->m_node)->get_m_data(); }
+        pointer operator->() const noexcept { return &(static_cast<Node*>(this->m_node)->cget_m_data()); }
 
         Self& operator++() noexcept
         {
@@ -108,7 +109,7 @@ namespace stl
             this->m_node = this->m_node->m_next;
             return temp;
         }
-        
+
         bool operator==(const Self& __x) const noexcept { return this->m_node == __x.m_node; }
 
         bool operator!=(const Self& __x) const noexcept { return this->m_node != __x.m_node; }
@@ -116,20 +117,28 @@ namespace stl
         Self m_next() const noexcept
         {
             if (this->m_node)
-                return fwd_list_const_iterator<T>(this->m_node->m_next);
+                return fwd_list_const_iterator(this->m_node->m_next);
 
-            return fwd_list_const_iterator<T>(nullptr);
+            return fwd_list_const_iterator(nullptr);
         }
 
-        const Node* m_node;
+        Node* m_node;
     };
 
+    /**
+     * @brief std::forward_list is a container that supports fast insertion and removal of elements from anywhere in the container.
+     *        It is implemented as a singly-linked list. 
+     * @tparam T The type of the elements @tparam Allocator An allocator that is used to acquire/release memory and to construct/destroy the elements in that memory.
+     */
     template <
         typename T,
         typename Allocator = stl::allocator<T>
     > class forward_list
     {
-    private:
+        /***************
+        * MEMBER TYPES *
+        ***************/
+
         using allocator_traits = stl::allocator_traits<Allocator>;
         typedef typename Allocator::template rebind<fwd_list_node<T>>::other node_allocator;
 
@@ -146,11 +155,17 @@ namespace stl
         typedef fwd_list_const_iterator<T>             const_iterator;
         typedef fwd_list_node<T>                       Node;
 
+        /**********************************
+        * MEMBER FUNCTIONS - CONSTRUCTORS *
+        **********************************/
+
         forward_list() noexcept
-            : m_head(nullptr) { this->m_head = this->m_create_node(); }
+            : m_head(nullptr) 
+        { this->m_head = this->m_create_node(); }
 
         forward_list(const Allocator& alloc) 
-            : m_alloc(alloc), m_head(nullptr) { this->m_head = this->m_create_node(); }
+            : m_alloc(alloc), m_head(nullptr) 
+        { this->m_head = this->m_create_node(); }
 
         forward_list(size_type count, const_reference value, const Allocator& alloc = Allocator())
             :m_head(nullptr), m_alloc(alloc) 
@@ -185,14 +200,14 @@ namespace stl
             : m_head(nullptr), m_alloc(allocator_traits::select_on_container_copy_construction(other.m_alloc)) 
         {
             this->m_head = this->m_create_node(); 
-            this->m_range_initialize(other.begin(), other.end()); 
+            this->m_range_initialize(other.cbegin(), other.cend()); 
         }
 
-        forward_list(const forward_list& other, const Allocator& alloc = Allocator())
+        forward_list(const forward_list& other, const Allocator& alloc)
             : m_head(nullptr), m_alloc(alloc) 
         {
             this->m_head = this->m_create_node();
-            this->m_range_initialize(other.begin(), other.end()); 
+            this->m_range_initialize(other.cbegin(), other.cend()); 
         }
 
         forward_list(std::initializer_list<value_type> ilist, const Allocator& alloc = Allocator()) 
@@ -201,6 +216,10 @@ namespace stl
             this->m_head = this->m_create_node(); 
             this->m_range_initialize(ilist.begin(), ilist.end()); 
         }
+
+        /*************
+        * DESTRUCTOR *
+        *************/
 
         ~forward_list();
 
@@ -215,27 +234,57 @@ namespace stl
 
         void assign(std::initializer_list<value_type> ilist);
 
-        allocator_type get_allocator() const noexcept { return this->m_alloc; }
+        allocator_type get_allocator() const noexcept 
+        { return this->m_alloc; }
 
-        reference front() { return *this->m_head->m_next->get_m_data(); }
+        /*****************
+        * ELEMENT ACCESS *
+        *****************/
 
-        const_reference front() const { return *this->m_head->m_next->get_m_data(); }
+        reference front() 
+        { return *this->m_head->m_next->get_m_data(); }
 
-        iterator before_begin() noexcept { return iterator(this->m_head); }
+        const_reference front() const 
+        { return *this->m_head->m_next->get_m_data(); }
 
-        const_iterator before_begin() const noexcept { return const_iterator(this->m_head); }
+        /************
+        * ITERATORS *
+        ************/
 
-        iterator begin() noexcept { return iterator(this->m_head->m_next); }
+        iterator before_begin() noexcept 
+        { return iterator(this->m_head); }
 
-        const_iterator begin() const noexcept { return const_iterator(this->m_head->m_next); }
+        const_iterator cbefore_begin() const noexcept 
+        { return const_iterator(this->m_head); }
 
-        iterator end() noexcept { return iterator(0); }
+        iterator begin() noexcept 
+        { return iterator(this->m_head->m_next); }
+
+        const_iterator cbegin() const noexcept 
+        { return const_iterator(this->m_head->m_next); }
+
+        iterator end() noexcept 
+        { return iterator(0); }
         
-        const_iterator end() const noexcept { return const_iterator(0); }
+        const_iterator cend() const noexcept 
+        { return const_iterator(0); }
 
-        bool empty() const noexcept { return this->m_head->m_next == 0; }
+        /***********
+        * CAPACITY *
+        ***********/
+
+        bool empty() const noexcept 
+        { return this->m_head->m_next == 0; }
+
+        size_type max_size() const noexcept
+        { return std::numeric_limits<difference_type>::max(); }
+
+        /************
+        * MODIFIERS *
+        ************/
  
-        void clear() noexcept { this->m_clear_list(); }
+        void clear() noexcept 
+        { this->m_clear_list(); }
 
         iterator insert_after(const_iterator pos, const_reference value) 
         { return iterator(this->m_insert_after(pos, value)); }
@@ -323,17 +372,20 @@ namespace stl
         template <typename UnaryPredicate>
         size_type remove_if(UnaryPredicate pred);
 
-        void reverse() noexcept { this->m_reverse_after(); }
+        void reverse() noexcept 
+        { this->m_reverse_after(); }
 
         template <typename BinaryPredicate>
         size_type unique(BinaryPredicate pred);
 
-        void unique() { this->unique(stl::equal_to<value_type>()); }
+        void unique() 
+        { this->unique(stl::equal_to<value_type>()); }
 
         template <typename Compare>
         void sort(Compare comp);
 
-        void sort() { this->sort(stl::less<value_type>()); }
+        void sort() 
+        { this->sort(stl::less<value_type>()); }
 
     private:
         Node*            m_head;
@@ -373,6 +425,33 @@ namespace stl
     
         void m_reverse_after() noexcept;
     };
+
+    template <typename T, typename Allocator>
+    bool operator==(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs);
+
+    template <typename T, typename Allocator>
+    inline bool operator<(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    { return stl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend()); }
+
+    template <typename T, typename Allocator>
+    inline bool operator!=(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    { return !(lhs == rhs); }
+
+    template <typename T, typename Allocator>
+    inline bool operator>(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    { return rhs < lhs; }
+
+    template <typename T, typename Allocator>
+    inline bool operator>=(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    { return !(lhs < rhs); }
+
+    template <typename T, typename Allocator>
+    inline bool operator<=(const forward_list<T, Allocator>& lhs, const forward_list<T, Allocator>& rhs)
+    { return !(rhs < lhs); }
+
+    template <typename T, typename Allocator>
+    inline void swap(forward_list<T, Allocator>& lhs, forward_list<T, Allocator>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+    { lhs.swap(rhs); }
 }
 
 #include "forward_list.tcc"

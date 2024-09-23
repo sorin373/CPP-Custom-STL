@@ -10,8 +10,9 @@
 
 #define __TEST_ALL__             0 
 #define __TEST_ARRAY__           0
-#define __TEST_VECTOR__          1
-
+#define __TEST_VECTOR__          0
+#define __TEST_FORWARD_LIST      1
+#define __TEST_UNORDERED_LIST    0
 #define __TEST_FUNCTIONAL_HASH__ 0
 #define __TEST_TYPE_TRAITS__     0
 
@@ -116,6 +117,17 @@ static void test_vector()
     vector_container_vector.__TEST__();
 }
 
+void test_forward_list()
+{
+    std::cout << "\n+-------------------------------------+\n"
+              << "| Testing the Forward List Container  |\n"
+              << "+-------------------------------------+\n\n";
+
+    std::cout << "=== INT ===\n\n";
+    forward_list_container_test<int> forward_list_int({INT_MIN, 2147483000, 2147483646, INT_MAX});
+    forward_list_int.__TEST__();
+}
+
 void INIT_UNIT_TESTS()
 {
 #if __TEST_TYPE_TRAITS__
@@ -133,6 +145,11 @@ void INIT_UNIT_TESTS()
 #if __TEST_VECTOR__ || __TEST_ALL__
     test_vector();
 #endif
+
+#if __TEST_FORWARD_LIST || __TEST_ALL__
+    test_forward_list();
+#endif
+    
 }
 
 #endif // UNIT_TESTING_H

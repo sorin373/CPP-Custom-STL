@@ -73,8 +73,6 @@ namespace stl
         typedef typename stl::reverse_iterator<iterator>              reverse_iterator;
         typedef typename stl::reverse_iterator<const_iterator>  const_reverse_iterator;
 
-    public:
-
         /**********************************
         * MEMBER FUNCTIONS - CONSTRUCTORS *
         **********************************/

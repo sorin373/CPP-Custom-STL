@@ -19,6 +19,10 @@ namespace stl
 
         __hash_node(const __hash_node& other)
             : m_pair(other.m_pair), m_next(other.m_next) { }
+
+        Key first() const noexcept { return this->m_pair.first; }
+
+        T second() const noexcept { return this->m_pair.second; }
     };
 
     template <typename Key, typename T>
@@ -102,6 +106,9 @@ namespace stl
         pointer*  m_bucket_end;
         pointer   m_current;
 
+        __map_iterator() noexcept
+            : m_bucket_begin(nullptr), m_bucket_end(nullptr), m_current(nullptr) { }
+
         __map_iterator(pointer* __bucket_begin, pointer* __bucket_end, pointer __node_it) 
             : m_bucket_begin(__bucket_begin), m_bucket_end(__bucket_end), m_current(__node_it) 
         { 
@@ -156,6 +163,9 @@ namespace stl
         pointer*  m_bucket_begin;
         pointer*  m_bucket_end;
         pointer   m_current;
+
+        __const_map_iterator() noexcept
+            : m_bucket_begin(nullptr), m_bucket_end(nullptr), m_current(nullptr) { }
 
         __const_map_iterator(pointer* __bucket_begin, pointer* __bucket_end, pointer __node_it)
             : m_bucket_begin(__bucket_begin), m_bucket_end(__bucket_end), m_current(__node_it) 

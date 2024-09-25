@@ -56,19 +56,19 @@ namespace stl
         typename T, 
         typename Hash      = stl::hash<Key>, 
         typename KeyEqual  = stl::equal_to<Key>, 
-        typename Allocator = stl::allocator<stl::__hash_node<const Key, T>>
+        typename Allocator = stl::allocator<stl::pair_node<Key, T>>
     > class unordered_map
     {
         constexpr static unsigned short   __DEFAULT_BUCKET_SIZE = 16;
         constexpr static float            __DEFAULT_LOAD_FACTOR = .75;
 
         using allocator_traits = stl::allocator_traits<Allocator>;
-        using bucket_allocator = typename Allocator::template rebind<stl::__hash_node<const Key, T>*>::other;
+        using bucket_allocator = typename Allocator::template rebind<stl::pair_node<Key, T>*>::other;
 
     public:
         typedef Key                                                         key_type;
         typedef T                                                           mapped_type;
-        typedef stl::__hash_node<const Key, T>                              value_type;
+        typedef stl::pair_node<Key, T>                                    value_type;
         typedef stl::size_t                                                 size_type; 
         typedef stl::ptrdiff_t                                              difference_type;
         typedef Hash                                                        hasher;
@@ -78,10 +78,11 @@ namespace stl
         typedef const value_type&                                           const_reference;
         typedef typename allocator_traits::pointer                          pointer;
         typedef typename allocator_traits::const_pointer                    const_pointer;
-        typedef typename stl::__map_iterator<key_type, mapped_type>         iterator;
-        typedef typename stl::__const_map_iterator<key_type, mapped_type>   const_iterator;
-        typedef typename stl::__node_iterator<key_type, mapped_type>        local_iterator;
-        typedef typename stl::__const_node_iterator<key_type, mapped_type>  const_local_iterator;
+        typedef typename stl::map_iterator<key_type, mapped_type>           iterator;
+        typedef typename stl::const_map_iterator<key_type, mapped_type>     const_iterator;
+        typedef typename stl::node_iterator<key_type, mapped_type>          local_iterator;
+        typedef typename stl::const_node_iterator<key_type, mapped_type>    const_local_iterator;
+        typedef typename stl::pair_node<key_type, mapped_type>              node_type;
 
         unordered_map()
             : m_table(nullptr), m_size(0), m_capacity(__DEFAULT_BUCKET_SIZE), m_load_factor(__DEFAULT_LOAD_FACTOR), m_hash(), m_key_equal(), m_alloc()
@@ -217,12 +218,75 @@ namespace stl
             return *this;
         }
 
+        allocator_type get_allocator() const noexcept { return this->m_alloc; }
+
+        iterator begin() { return iterator(this->m_table, this->m_table + this->m_capacity, *this->m_table); }
+
+        iterator end() { return iterator(this->m_table + this->m_capacity, this->m_table + this->m_capacity, nullptr); }
+
+        const_iterator cbegin() const noexcept { return const_iterator(this->m_table, this->m_table + this->m_capacity, *this->m_table); }
+
+        const_iterator cend() const noexcept { return const_iterator(this->m_table + this->m_capacity, this->m_table + this->m_capacity, nullptr); }
+
+        bool empty() const noexcept { return this->m_size == 0; }
+
+        size_type size() const noexcept { return this->m_size; }
+
+        size_type max_size() const noexcept { return std::numeric_limits<difference_type>::max(); }
+
+        void clear() noexcept;
+
+        pair_node<iterator, bool> insert(const_reference node)
+        { return this->m_insert(node.m_pair.first, node.m_pair.second); }
+
+        pair_node<iterator, bool> insert(value_type&& node)
+        { return this->m_insert(stl::move(node.m_pair.first), stl::move(node.m_pair.second)); }
+
+        iterator insert(const_iterator hint, const_reference node)
+        { return this->m_insert(hint, node.m_pair.first, node.m_pair.second); }
+
+        iterator insert(const_iterator hint, value_type&& node)
+        { this->insert(hint, stl::move(node.m_pair.first), stl::move(node.m_pair.second)); }
+
+        template <typename InputIt, typename = stl::RequireIterator<InputIt>>
+        void insert(InputIt first, InputIt last);
+
+        void insert(std::initializer_list<value_type> ilist)
+        { this->insert(ilist.begin(), ilist.end()); }
+
+        template <typename... Args>
+        pair_node<iterator, bool> emplace(Args&&... args)
+        { return this->m_insert(stl::forward<Args>(args)...); }
+
+        template <typename... Args>
+        iterator emplace_hint(const_iterator hint, Args&&... args)
+        { return this->m_insert(hint, stl::forward<Args>(args)...); }
+
+        template <typename... Args>
+        pair_node<iterator, bool> try_emplace(const key_type& key, Args&&... args);
+
+        template <typename... Args>
+        pair_node<iterator, bool> try_emplace(key_type&& key, Args&&... args);
+
+
+
+
+        // 
+        //
+        //
+        //
+
+
+
         size_type hash(const key_type key)
         { return static_cast<size_type>(this->m_hash(key) % this->m_capacity); }
 
         void rehash(size_type new_size)
         {
             pointer* temp = this->m_get_table(new_size);
+
+            for (size_type i = 0; i < new_size; ++i)
+                *(temp + i) = nullptr;
 
             for (size_type i = 0; i < m_size; ++i)
             {
@@ -242,6 +306,7 @@ namespace stl
 
             this->m_deallocate_table();
             this->m_table = temp;
+            this->m_capacity = new_size;
         }
 
         void reserve(size_type count)
@@ -298,73 +363,11 @@ namespace stl
         //     return false;
         // }
 
-        void clear() noexcept;
-
-        __hash_node<iterator, bool> insert(const_reference __n)
-        { 
-            this->m_check_rehash(this->m_size, this->m_capacity, this->m_load_factor);
-
-            mapped_type value = __n.m_pair.second;
-            key_type key = __n.m_pair.first;
         
-            size_type hash_value = this->hash(key);
 
-            pointer prev = nullptr, entry = *(this->m_table + hash_value);
 
-            while (entry != nullptr && !this->m_key_equal(entry->m_pair.first, key))
-            {
-                prev = entry;
-                entry = entry->m_next;
-            }
 
-            if (entry == nullptr)
-            {
-                entry = this->m_get_node(key, value);
-                
-                if (prev == nullptr)
-                    this->m_table[hash_value] = entry;
-                else
-                    prev->m_next = entry;
 
-                ++this->m_size;
-
-                return {iterator(this->m_table, this->m_table + this->m_capacity, entry), true};
-            }
-            else
-                entry->m_pair.second = value;
-
-            return {iterator(this->m_table, this->m_table + this->m_capacity, entry), false};
-        }
-
-        // iterator insert(const_iterator hint, const pair<key_type, value_type> p)
-        // {
-        //     pointer entry = hint.m_node_it;
-
-        //     key_type entry_key     = entry->get_key();
-        //     value_type entry_value = entry->get_value();
-
-        //     key_type pair_key     = p.get_key();
-        //     value_type pair_value = p.get_value();
-
-        //     pointer prev = nullptr;
-
-        //     if (m_key_equal(entry_key, pair_key))
-        //         entry->set_value(pair_value);
-        //     else
-        //     {
-        //         while (entry != nullptr)
-        //         {
-        //             prev = entry;
-        //             entry = entry->get_next();
-        //         }
-
-        //         entry = new pair<key_type, value_type>(pair_key, pair_value);
-
-        //         prev->set_next(entry);
-        //     }
-
-        //     return iterator(m_table, m_table + m_capacity, entry);
-        // }
 
         // void insert(std::initializer_list<pair<key_type, value_type>> init)
         // {
@@ -450,34 +453,25 @@ namespace stl
         //         entry->set_value(value);
         // }
 
-        // bool empty() const noexcept
-        // {
-        //     for (size_type i = 0; i < m_capacity; i++)
-        //         if (m_table[i] != nullptr)
-        //             return false;
-
-        //     return true;
-        // }
-
         // pair<key_type, value_type>** get_m_table() const noexcept { return m_table; }
 
-        // size_type size() const noexcept         { return m_size; }
 
-        // size_type bucket_count() const noexcept { return m_capacity; }
 
-        // size_type bucket_size(size_type index) const
-        // {
-        //     size_type count = 0;
-        //     pointer entry = m_table[index];
+        size_type bucket_count() const noexcept { return m_capacity; }
 
-        //     while (entry != nullptr)
-        //     {
-        //         count++;
-        //         entry = entry->get_next();
-        //     }
+        size_type bucket_size(size_type index) const
+        {
+            size_type count = 0;
+            pointer entry = this->m_table[index];
 
-        //     return count;
-        // }
+            while (entry != nullptr)
+            {
+                ++count;
+                entry = entry->get_next();
+            }
+
+            return count;
+        }
 
         size_type bucket(const key_type key) const
         { return this->hash(key); }
@@ -518,14 +512,6 @@ namespace stl
             /// @todo implement insert if not found
         }
 
-        iterator begin() { return iterator(this->m_table, this->m_table + this->m_capacity, *this->m_table); }
-
-        iterator end() { return iterator(this->m_table + this->m_capacity, this->m_table + this->m_capacity, nullptr); }
-
-        const_iterator cbegin() const noexcept { return const_iterator(this->m_table, this->m_table + this->m_capacity, *this->m_table); }
-
-        const_iterator cend() const noexcept { return const_iterator(this->m_table + this->m_capacity, this->m_table + this->m_capacity, nullptr); }
-
         local_iterator begin(size_type n) 
         { 
             if (n >= this->m_capacity)
@@ -558,6 +544,8 @@ namespace stl
             return const_local_iterator(*(this->m_table + n));
         }
 
+        pointer* get_table() { return this->m_table; }
+
     private:
         pointer*        m_table;
         size_type       m_size;             // total number of elements. It is incremented everytime a new <key, value> element is added
@@ -569,7 +557,7 @@ namespace stl
 
         pointer* m_get_table(const size_type bucket_count);
 
-        pointer m_get_node(const key_type& key, const mapped_type& value);
+        pointer m_get_node(key_type&& key, mapped_type&& value);
 
         void m_deallocate_table();
 
@@ -583,6 +571,12 @@ namespace stl
         void m_range_initialize(const_iterator first, const_iterator last, size_type bucket_count = __DEFAULT_BUCKET_SIZE);
 
         void m_check_rehash(size_type t_size, size_type b_size, float load_factor = __DEFAULT_LOAD_FACTOR);
+
+        template <typename... Args>
+        pair_node<iterator, bool> m_insert(Args&&... args);
+
+        template <typename... Args>
+        iterator m_insert(const_iterator hint, Args&&... args);
     };
 }
 

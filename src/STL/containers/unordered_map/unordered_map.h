@@ -68,7 +68,7 @@ namespace stl
     public:
         typedef Key                                                         key_type;
         typedef T                                                           mapped_type;
-        typedef stl::pair_node<Key, T>                                    value_type;
+        typedef stl::pair_node<Key, T>                                      value_type;
         typedef stl::size_t                                                 size_type; 
         typedef stl::ptrdiff_t                                              difference_type;
         typedef Hash                                                        hasher;
@@ -246,7 +246,7 @@ namespace stl
         { return this->m_insert(hint, node.m_pair.first, node.m_pair.second); }
 
         iterator insert(const_iterator hint, value_type&& node)
-        { this->insert(hint, stl::move(node.m_pair.first), stl::move(node.m_pair.second)); }
+        { return this->insert(hint, stl::move(node.m_pair.first), stl::move(node.m_pair.second)); }
 
         template <typename InputIt, typename = stl::RequireIterator<InputIt>>
         void insert(InputIt first, InputIt last);
@@ -263,10 +263,40 @@ namespace stl
         { return this->m_insert(hint, stl::forward<Args>(args)...); }
 
         template <typename... Args>
-        pair_node<iterator, bool> try_emplace(const key_type& key, Args&&... args);
+        pair_node<iterator, bool> try_emplace(const key_type& key, Args&&... args)
+        { return this->m_try_emplace(key, stl::forward<Args>(args)...); }
 
         template <typename... Args>
-        pair_node<iterator, bool> try_emplace(key_type&& key, Args&&... args);
+        pair_node<iterator, bool> try_emplace(key_type&& key, Args&&... args)
+        { return this->m_try_emplace(stl::move(key), stl::forward<Args>(args)...); }
+
+        template <typename K, typename... Args>
+        pair_node<iterator, bool> try_emplace(K&& key, Args&&... args)
+        { return this->m_try_emplace(stl::forward<K>(key), stl::forward<Args>(args)...); }
+
+        template <typename... Args>
+        iterator try_emplace(const_iterator hint, const key_type& key, Args&&... args)
+        { return this->m_try_emplace(hint, key, stl::forward<Args>(args)...); }
+
+        template <typename... Args>
+        iterator try_emplace(const_iterator hint, key_type&& key, Args&&... args)
+        { return this->m_try_emplace(hint, stl::move(key), stl::forward<Args>(args)...); }
+
+        template <typename K, typename... Args>
+        iterator try_emplace(const_iterator hint, K&& key, Args&&... args)
+        { return this->try_emplace(hint, stl::forward<K>(key), stl::forward<Args>(args)...); }
+
+        iterator erase(iterator pos);
+
+        iterator erase(const_iterator pos);
+
+        iterator erase(const_iterator first, const_iterator last);
+
+        size_type erase(const key_type& key);
+
+        template <typename K>
+        size_type erase(K&& x);
+
 
 
 
@@ -281,6 +311,8 @@ namespace stl
         size_type hash(const key_type key)
         { return static_cast<size_type>(this->m_hash(key) % this->m_capacity); }
 
+        // let this func update cap
+        // old cap used for hashing
         void rehash(size_type new_size)
         {
             pointer* temp = this->m_get_table(new_size);
@@ -288,7 +320,7 @@ namespace stl
             for (size_type i = 0; i < new_size; ++i)
                 *(temp + i) = nullptr;
 
-            for (size_type i = 0; i < m_size; ++i)
+            for (size_type i = 0; i < this->m_capacity; ++i)
             {
                 pointer entry = m_table[i];
 
@@ -316,21 +348,21 @@ namespace stl
             this->rehash(count);
         }
 
-        // iterator find(const key_type key)
-        // {
-        //     size_type hash_value = m_hash_func(key, m_capacity);
-        //     pointer entry = m_table[hash_value];
+        iterator find(const key_type key)
+        {
+            size_type hash_value = this->hash(key);
+            pointer entry = m_table[hash_value];
 
-        //     while (entry != nullptr)
-        //     {
-        //         if (m_key_equal(entry->get_key(), key))
-        //             return iterator(m_table, m_table + m_capacity, entry);
+            while (entry != nullptr)
+            {
+                if (this->m_key_equal(entry->m_pair.first, key))
+                    return iterator(this->m_table, this->m_table + this->m_capacity, entry);
 
-        //         entry = entry->get_next();
-        //     }
+                entry = entry->m_next;
+            }
 
-        //     return end();
-        // }
+            return this->end();
+        }
 
         // const_iterator find(const key_type key) const
         // {
@@ -467,7 +499,7 @@ namespace stl
             while (entry != nullptr)
             {
                 ++count;
-                entry = entry->get_next();
+                entry = entry->m_next;
             }
 
             return count;
@@ -577,6 +609,12 @@ namespace stl
 
         template <typename... Args>
         iterator m_insert(const_iterator hint, Args&&... args);
+        
+        template <typename... Args>
+        pair_node<iterator, bool> m_try_emplace(const key_type& key, Args&&... args);
+
+        template <typename... Args>
+        iterator m_try_emplace(const_iterator hint, const key_type& key, Args&&... args);
     };
 }
 

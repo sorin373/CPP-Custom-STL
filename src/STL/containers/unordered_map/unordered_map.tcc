@@ -1,6 +1,8 @@
+#define __T_PARAMS template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+
 namespace stl
 {
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::clear() noexcept
     {
         for (size_type i = 0; i < this->m_capacity; ++i)
@@ -22,7 +24,7 @@ namespace stl
         this->m_size = 0;
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     template <typename InputIt, typename>
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::insert(InputIt first, InputIt last)
     {
@@ -30,9 +32,16 @@ namespace stl
             this->insert(*first);
     }
 
+    __T_PARAMS
+    typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator 
+    unordered_map<Key, T, Hash, KeyEqual, Allocator>::erase(const_iterator first, const_iterator last)
+    {
+        
+    } 
+
     /// @c private_members
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::pointer*
     unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_get_table(const size_type bucket_count)
     {
@@ -41,7 +50,7 @@ namespace stl
         return __temp; 
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::pointer
     unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_get_node(key_type&& key, mapped_type&& value)
     {
@@ -53,7 +62,7 @@ namespace stl
         return __new_node;
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_default_initialize(const size_type bucket_count)
     {
         this->m_capacity = bucket_count;
@@ -63,7 +72,7 @@ namespace stl
             *(this->m_table + i) = nullptr;
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_deallocate_table()
     {
         bucket_allocator __alloc = this->m_alloc;
@@ -71,7 +80,7 @@ namespace stl
         this->m_table = nullptr;
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_destroy_table()
     {
         this->clear();
@@ -79,7 +88,7 @@ namespace stl
         this->m_capacity = 0;
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     template <typename InputIt>
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_range_initialize(InputIt first, InputIt last, size_type bucket_count)
     {
@@ -89,7 +98,7 @@ namespace stl
             this->insert(*first);
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_range_initialize(const_iterator first, const_iterator last, size_type bucket_count)
     {
         this->m_default_initialize(bucket_count);
@@ -98,17 +107,17 @@ namespace stl
             this->insert(first.m_current);
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_check_rehash(size_type t_size, size_type b_size, float load_factor)
     {
         if (static_cast<float>(t_size) / b_size > load_factor)
         {
-            this->m_capacity *= 2;
-            this->rehash(this->m_capacity);
+            size_type new_cap = this->m_capacity + this->m_capacity / 2 + 1;
+            this->rehash(new_cap);
         }
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     template <typename... Args>
     pair_node<typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator, bool>
     unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_insert(Args&&... args)
@@ -148,7 +157,7 @@ namespace stl
         return {iterator(this->m_table, this->m_table + this->m_capacity, entry), false};
     }
 
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+    __T_PARAMS
     template <typename... Args>
     typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator
     unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_insert(const_iterator hint, Args&&... args)
@@ -186,5 +195,31 @@ namespace stl
             entry->m_pair.second = value;
 
         return iterator(this->m_table, this->m_table + this->m_capacity, entry);
+    }
+
+    __T_PARAMS
+    template <typename... Args>
+    pair_node<typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator, bool>
+    unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_try_emplace(const key_type& key, Args&&... args)
+    {
+        iterator it = this->find(key);
+
+        if (it != this->end())
+            return {it, false};
+
+        return this->emplace(key, mapped_type(stl::forward<Args>(args)...));
+    }
+
+    __T_PARAMS
+    template <typename... Args>
+    typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator
+    unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_try_emplace(const_iterator hint, const key_type& key, Args&&... args)
+    {
+        iterator it = this->find(key);
+
+        if (it != this->end())
+            return {it, false};
+
+        return this->emplace_hint(hint, key, mapped_type(stl::forward<Args>(args)...));
     }
 }

@@ -231,4 +231,48 @@ namespace stl
             return result;
         }
     }
+
+    namespace __detail
+    {
+        template <typename It>
+        void do_advance(It& __it, typename stl::iterator_traits<It>::difference_type __n, stl::input_iterator_tag)
+        {
+            while (__n > 0)
+            {
+                --__n;
+                ++__it;
+            }
+        }
+
+        template <typename It>
+        void do_advance(It& __it, typename stl::iterator_traits<It>::difference_type __n, stl::bidirectional_iterator_tag)
+        {
+            while (__n > 0)
+            {
+                --__n;
+                ++__it;
+            }
+
+            while (__n < 0)
+            {
+                ++__n;
+                --__it;
+            }
+        }
+
+        template <typename It>
+        void do_advance(It& __it, typename stl::iterator_traits<It>::difference_type __n, stl::random_access_iterator_tag)
+        { __it += __n; }
+    }
+
+    template <typename It, typename Distance>
+    void advance(It& it, Distance n)
+    { __detail::do_advance(it, typename stl::iterator_traits<It>::difference_type(n), typename stl::iterator_traits<It>::iterator_category()); }
+
+    template <typename InputIt>
+    constexpr InputIt next(InputIt it, typename stl::iterator_traits<InputIt>::difference_type n = 1)
+    {
+        stl::advance(it, n);
+        return it;
+    }
 }

@@ -45,6 +45,4 @@ namespace stl
     { lhs.swap(rhs); }
 }
 
-
-
 #endif // STL_PAIR_H

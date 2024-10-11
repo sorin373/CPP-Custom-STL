@@ -3,8 +3,8 @@ namespace stl
     template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
     class unordered_map<Key, T, Hash, KeyEqual, Allocator>::node_type
     {
-        node_type(pair_node<Key, T>* node = nullptr)
-            : m_node(node) { }
+        node_type(pair_node<Key, T>* node = nullptr, const Allocator& alloc = Allocator())
+            : m_node(node), m_alloc(alloc) { }
 
         node_type(node_type&& other) noexcept
             : m_node(other.m_node)
@@ -24,10 +24,14 @@ namespace stl
         {
             if (this != &other)
             {
-                this->m_alloc.destroy(this->m_node);
-                this->m_alloc.deallocate(this->m_node, 1);
+                if (this->m_node != other.m_node && this->m_node != nullptr)
+                {
+                    this->m_alloc.destroy(this->m_node);
+                    this->m_alloc.deallocate(this->m_node, 1);
+                }
 
                 this->m_node = other.m_node;
+                this->m_alloc = stl::move(other.m_alloc);
                 other.m_node = nullptr;
             }
 

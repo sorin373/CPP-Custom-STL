@@ -8,19 +8,18 @@
 namespace stl
 {
     template <typename T>
-    class allocator
+    struct allocator
     {
-    public:
-        typedef T                   value_type;
-        typedef T*                  pointer;
-        typedef const T*            const_pointer;
-        typedef T&                  reference;
-        typedef const T&            const_reference;
-        typedef stl::size_t         size_type;
-        typedef stl::ptrdiff_t      difference_type;
-        typedef true_type           propagate_on_container_move_assignment;
-        typedef void*               void_pointer;
-        typedef const void*         const_void_pointer;
+        typedef T               value_type;
+        typedef T*              pointer;
+        typedef const T*        const_pointer;
+        typedef T&              reference;
+        typedef const T&        const_reference;
+        typedef stl::size_t     size_type;
+        typedef stl::ptrdiff_t  difference_type;
+        typedef true_type       propagate_on_container_move_assignment;
+        typedef void*           void_pointer;
+        typedef const void*     const_void_pointer;
         
         template <typename U> 
         struct rebind { typedef allocator<U> other; };

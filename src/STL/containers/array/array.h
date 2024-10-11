@@ -49,10 +49,8 @@ namespace stl
      * @tparam T          Type of element
      * @tparam array_size The fixed no. of elements that the array can have
      */
-    template <
-        typename T, 
-        stl::size_t array_size
-    > class array
+    template <typename T, stl::size_t array_size> 
+    class array
     {
     public:
         typedef T                    value_type;
@@ -160,7 +158,7 @@ namespace stl
         ~array() = default;
 
     private:
-        T m_data[array_size];
+        value_type m_data[array_size];
     };
 
     /**
@@ -169,7 +167,7 @@ namespace stl
      * @param I   The index of the element
      * @param arr The array from which the contents are extracted 
      */
-    template <unsigned int I, typename T, stl::size_t array_size> 
+    template <stl::size_t I, typename T, stl::size_t array_size> 
     constexpr T& get(array<T, array_size> &arr) { return arr[I]; }
 
     /**

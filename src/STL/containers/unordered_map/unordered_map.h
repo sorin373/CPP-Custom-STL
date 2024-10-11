@@ -44,7 +44,7 @@ namespace stl
     /**
      * @brief This container represents a generic implementation of the hash table data structure.
      *        It consists in many member functions that help the user manage the hash table data faster and more efficiently.
-     *        Moreover, it has automatic resizing when the load factor exceeds 75%.
+     *        Moreover, it has automatic rehashing when the load factor exceeds 75%.
      * @param Key        Key type
      * @param T          Value type
      * @param Hash       Hash function type

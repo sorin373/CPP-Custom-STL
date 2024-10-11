@@ -140,7 +140,7 @@ namespace stl
         ***************/
 
         using allocator_traits = stl::allocator_traits<Allocator>;
-        typedef typename Allocator::template rebind<fwd_list_node<T>>::other node_allocator;
+        using node_allocator = typename Allocator::template rebind<fwd_list_node<T>>::other;
 
     public:
         typedef T                                      value_type;
@@ -456,4 +456,4 @@ namespace stl
 
 #include "forward_list.tcc"
 
-#endif
+#endif // FORWARD_LIST_H

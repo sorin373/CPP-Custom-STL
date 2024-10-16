@@ -95,7 +95,7 @@ namespace stl
         typedef random_access_iterator_tag             iterator_category;
     };
 
-    /// @brief Partial specialization for raw const raw pointers (e.g., const int*)
+    /// @brief Partial specialization for const raw pointers (e.g., const int*)
     template <typename T>
     struct iterator_traits<const T*>
     {

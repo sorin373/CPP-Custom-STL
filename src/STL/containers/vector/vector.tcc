@@ -9,7 +9,10 @@ namespace stl
         if (this->m_data != nullptr)
         {
             if (count > this->m_capacity)
-                try { this->reserve(count); }
+                try 
+                { 
+                    this->reserve(count); 
+                }
                 catch(...)
                 {
                     this->alloc_fallback();
@@ -43,7 +46,10 @@ namespace stl
         if (this->m_data != nullptr)
         {
             if (size > this->m_capacity)
-                try { this->reserve(size); }
+                try 
+                { 
+                    this->reserve(size); 
+                }
                 catch(...)
                 {
                     this->alloc_fallback();

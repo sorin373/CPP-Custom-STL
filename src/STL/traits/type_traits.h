@@ -3,22 +3,6 @@
 
 namespace stl
 {
-    #if defined(_WIN32) || defined(_WIN64)
-        #if defined(_WIN64)
-            #define ENV 64
-        #else
-            #define ENV 32
-        #endif
-    #elif defined(__GNUC__)
-        #if defined(__x86_64__) || defined(__ppc64__)
-            #define ENV 64
-        #else
-            #define ENV 32
-        #endif
-    #else
-        #error "Unknown platform!"
-    #endif
-    
     /// @brief the unsigned integer type of the result of the sizeof operator
     typedef decltype(sizeof(0)) size_t;
  
@@ -42,7 +26,7 @@ namespace stl
     template <typename T, T v>
     struct integral_constant
     {
-        static constexpr T value =        v;
+        static constexpr T value = v;
 
         typedef T                       value_type;
         typedef integral_constant<T, v> type;
@@ -149,9 +133,9 @@ namespace stl
     template <typename T>
     struct add_cv { typedef typename add_const<typename add_volatile<T>::type>::type type; };
 
-    template <typename T> using add_const_t = typename add_const<T>::type;
-    template <typename T> using add_volatile_T = typename add_volatile<T>::type;
-    template <typename T> using add_cv_t = typename add_cv<T>::type;
+    template <typename T> using add_const_t     = typename add_const<T>::type;
+    template <typename T> using add_volatile_T  = typename add_volatile<T>::type;
+    template <typename T> using add_cv_t        = typename add_cv<T>::type;
 
     /// Primary type categories
 

@@ -2,6 +2,12 @@
 
 namespace stl
 {
+    template <typename forwardIt, typename T>
+    bool binary_search(forwardIt first, forwardIt last, const T& value)
+    {
+        
+    }
+
     template <typename ItTypeI, typename ItTypeII>
     inline bool equal(ItTypeI lhs, ItTypeI lhs_end, ItTypeII rhs)
     {

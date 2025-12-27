@@ -6,6 +6,21 @@
 #include "custom_alloc_TT.h"
 #include "UTconfig.h"
 
+struct employee
+{
+    int age;
+    float salary;
+    std::string domain;
+
+    employee()
+        : age(), salary(), domain() { }
+
+    employee(int __a, float __s, std::string __d)
+        : age(__a), salary(__s), domain(__d) { }
+
+    ~employee() = default;
+};
+
 template <
     typename Key,
     typename T,
@@ -23,7 +38,7 @@ public:
     constexpr unordered_map_container_test(const std::initializer_list<T>& ilist)
         : my_u_map(ilist) { }
 
-    ~forward_list_container_test() = default;
+    ~unordered_map_container_test() = default;
 
 private:
 

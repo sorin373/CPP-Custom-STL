@@ -1,1 +1,0 @@
-# Vector. User API interface.

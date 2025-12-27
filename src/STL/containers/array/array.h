@@ -36,8 +36,6 @@
 #include <initializer_list>
 #include <stdexcept>
 
-#include <array>
-
 #define OUT_OF_BOUNDS_EXCEPTION   throw std::out_of_range("Index out of bounds!\n");
 #define MEMORY_OVERFLOW_EXCEPTION throw std::runtime_error("Too many elements. Check the array size to be correct!\n");
 

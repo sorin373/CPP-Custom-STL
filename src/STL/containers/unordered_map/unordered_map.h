@@ -126,7 +126,7 @@ namespace stl
         { this->m_range_initialize(other.cbegin(), other.cend(), this->m_capacity); }
 
         unordered_map(const unordered_map&& other) 
-            : m_table(other.m_table), m_size(other.m_table), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
+            : m_table(other.m_table), m_size(other.m_size), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
               m_hash(stl::move(other.m_hash)), m_key_equal(stl::move(other.m_key_equal)), m_alloc(stl::move(other.m_alloc)) 
         { 
             other.m_size = other.m_capacity = 0;
@@ -134,7 +134,7 @@ namespace stl
         }
 
         unordered_map(const unordered_map&& other, const allocator_type& alloc)
-            : m_table(other.m_table), m_size(other.m_table), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
+            : m_table(other.m_table), m_size(other.m_size), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
               m_hash(stl::move(other.m_hash)), m_key_equal(stl::move(other.m_key_equal)), m_alloc(alloc) 
         { 
             other.m_size = other.m_capacity = 0;
@@ -219,7 +219,8 @@ namespace stl
             return *this;
         }
 
-        allocator_type get_allocator() const noexcept { return this->m_alloc; }
+        allocator_type get_allocator() const noexcept 
+        { return this->m_alloc; }
 
         iterator begin() { return iterator(this->m_table, this->m_table + this->m_capacity, *this->m_table); }
 
@@ -229,11 +230,14 @@ namespace stl
 
         const_iterator cend() const noexcept { return const_iterator(this->m_table + this->m_capacity, this->m_table + this->m_capacity, nullptr); }
 
-        bool empty() const noexcept { return this->m_size == 0; }
+        bool empty() const noexcept 
+        { return this->m_size == 0; }
 
-        size_type size() const noexcept { return this->m_size; }
+        size_type size() const noexcept 
+        { return this->m_size; }
 
-        size_type max_size() const noexcept { return std::numeric_limits<difference_type>::max(); }
+        size_type max_size() const noexcept 
+        { return std::numeric_limits<difference_type>::max(); }
 
         void clear() noexcept;
 
@@ -341,7 +345,7 @@ namespace stl
         {
             size_type new_cap = static_cast<size_type>(count / this->m_load_factor);
             new_cap = (1 > new_cap) ? 1 : new_cap; // Ensure at least 1 bucket exists
-            this->rehash(count);
+            this->rehash(new_cap);
         }
 
         iterator find(const key_type key)

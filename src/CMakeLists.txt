@@ -19,5 +19,6 @@ endif()
 
 add_executable(
   ${PROJECT_NAME}
-  benchmark/benchmark_vector.cpp
+  # benchmark/benchmark_vector.cpp
+  benchmark/benchmark_umap.cpp
 )

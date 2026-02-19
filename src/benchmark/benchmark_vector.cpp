@@ -46,7 +46,7 @@ long long bench_ms(const char* name, F&& f, int warmup = 1, int iters = 5)
 template <class Vec>
 static void touch_vec(Vec& v)
 {
-    // prevent optimizing away + touch some data
+    // prevent optimizing away
     if (v.size() > 0) sink += (std::uint64_t)v[0].a[0];
     if (v.size() > 2) sink += (std::uint64_t)v[v.size()/2].a[0];
     if (v.size() > 1) sink += (std::uint64_t)v[v.size()-1].a[0];

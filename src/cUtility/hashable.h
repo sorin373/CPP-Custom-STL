@@ -1,5 +1,4 @@
-#ifndef __HASHABLE_H__
-#define __HASHABLE_H__
+#pragma once
 
 #include "stl_pair.h"
 
@@ -259,5 +258,3 @@ namespace stl
     template <typename Key, typename T>
     using const_map_iterator = __detail::__const_map_iterator<Key, T>;
 }
-
-#endif // HASHABLE_H

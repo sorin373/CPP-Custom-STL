@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 project(stl VERSION 1.0.0)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
@@ -17,6 +19,5 @@ endif()
 
 add_executable(
   ${PROJECT_NAME}
-  memory/memory.cpp
-  main.cpp
+  benchmark/benchmark_vector.cpp
 )

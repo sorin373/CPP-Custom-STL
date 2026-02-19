@@ -1,5 +1,4 @@
-#ifndef __STL_PAIR_H__
-#define __STL_PAIR_H__
+#pragma once
 
 #include "../STL/algorithm/algorithm.h"
 
@@ -44,5 +43,3 @@ namespace stl
     inline void swap(pair<T1, T2>& lhs, pair<T1, T2>& rhs) noexcept(noexcept(lhs.swap(rhs)))
     { lhs.swap(rhs); }
 }
-
-#endif // STL_PAIR_H

@@ -1,5 +1,4 @@
-#ifndef __ALLOCATOR_H__
-#define __ALLOCATOR_H__
+#pragma once
 
 #include "../../cUtility/move.h"
 #include "../traits/type_traits.h"
@@ -61,5 +60,3 @@ namespace stl
 }
 
 #include "allocator.tcc"
-
-#endif // ALLOCATOR_H

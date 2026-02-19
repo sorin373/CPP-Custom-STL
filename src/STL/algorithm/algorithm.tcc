@@ -1,13 +1,7 @@
-#include "../memory.h"
+#include <memory>
 
 namespace stl
 {
-    template <typename forwardIt, typename T>
-    bool binary_search(forwardIt first, forwardIt last, const T& value)
-    {
-        
-    }
-
     template <typename ItTypeI, typename ItTypeII>
     inline bool equal(ItTypeI lhs, ItTypeI lhs_end, ItTypeII rhs)
     {
@@ -110,7 +104,7 @@ namespace stl
     template <typename T>
     typename enable_if<is_trivially_copyable<T>::value, T*>::type copy(const T* first, const T* last, T* d_first)
     {
-        stl::memcpy(d_first, first, sizeof(T) * (last - first));
+        memcpy(d_first, first, sizeof(T) * (last - first));
         return d_first + (last - first);
     }
 

@@ -1,5 +1,4 @@
-#ifndef __ALGORITHM_H__
-#define __ALGORITHM_H__
+#pragma once
 
 #include "../traits/type_traits.h"
 
@@ -40,5 +39,3 @@ namespace stl
 }
 
 #include "algorithm.tcc"
-
-#endif // ALGORITHM_H

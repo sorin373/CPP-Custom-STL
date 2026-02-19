@@ -396,46 +396,6 @@ namespace stl
 
     template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
     template <typename... Args>
-    typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator
-    unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_insert(const_iterator hint, Args&&... args)
-    {
-        this->m_check_rehash(this->m_size, this->m_capacity, this->m_load_factor);
-
-        stl::pair_node<key_type, mapped_type> node(stl::forward<Args>(args)...);
-
-        key_type key = node.m_pair.first;
-        mapped_type value = node.m_pair.second;
-
-        size_type hash_value = this->hash(key);
-        pointer prev = nullptr, entry = *(this->m_table + hash_value);
-
-        while (entry != nullptr && !this->m_key_equal(entry->m_pair.first, key))
-        {
-            prev = entry;
-            entry = entry->m_next;
-        }
-
-        if (entry == nullptr)
-        {
-            entry = this->m_get_node(stl::move(key), stl::move(value));
-
-            if (prev == nullptr)
-                this->m_table[hash_value] = entry;
-            else
-                prev->m_next = entry;
-
-            ++this->m_size;
-
-            return iterator(this->m_table, this->m_table + this->m_capacity, entry);
-        }
-        else
-            entry->m_pair.second = value;
-
-        return iterator(this->m_table, this->m_table + this->m_capacity, entry);
-    }
-
-    template <typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-    template <typename... Args>
     pair<typename unordered_map<Key, T, Hash, KeyEqual, Allocator>::iterator, bool>
     unordered_map<Key, T, Hash, KeyEqual, Allocator>::m_try_emplace(const key_type& key, Args&&... args)
     {

@@ -26,8 +26,7 @@
     @brief This is part of the standard template libraries (STL) and it is used to implement an unordered map.
  */
 
-#ifndef __UNORDERED_MAP__
-#define __UNORDERED_MAP__
+#pragma once
 
 #include "../../iterator.h"
 #include "../../allocator/allocator.h"
@@ -125,7 +124,7 @@ namespace stl
               m_hash(other.m_hash), m_key_equal(other.m_key_equal), m_alloc(alloc)
         { this->m_range_initialize(other.cbegin(), other.cend(), this->m_capacity); }
 
-        unordered_map(const unordered_map&& other) 
+        unordered_map(unordered_map&& other) 
             : m_table(other.m_table), m_size(other.m_size), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
               m_hash(stl::move(other.m_hash)), m_key_equal(stl::move(other.m_key_equal)), m_alloc(stl::move(other.m_alloc)) 
         { 
@@ -133,7 +132,7 @@ namespace stl
             other.m_table = nullptr;
         }
 
-        unordered_map(const unordered_map&& other, const allocator_type& alloc)
+        unordered_map(unordered_map&& other, const allocator_type& alloc)
             : m_table(other.m_table), m_size(other.m_size), m_capacity(other.m_capacity), m_load_factor(other.m_load_factor),
               m_hash(stl::move(other.m_hash)), m_key_equal(stl::move(other.m_key_equal)), m_alloc(alloc) 
         { 
@@ -154,7 +153,7 @@ namespace stl
         ~unordered_map()
         { this->m_destroy_table(); }
 
-        unordered_map& operator=(const unordered_map& other)
+        unordered_map& operator=(const unordered_map& other) noexcept
         {
             if (this != &other)
             {
@@ -173,9 +172,6 @@ namespace stl
                 this->m_key_equal = other.m_key_equal;
                 this->m_alloc = allocator_traits::select_on_container_copy_construction(other.m_alloc);
                 this->m_range_initialize(other.cbegin(), other.cend(), this->m_capacity);
-                
-                other.m_size = other.m_capacity = 0;
-                other.m_table = nullptr;
             }
 
             return *this;
@@ -195,6 +191,9 @@ namespace stl
                 this->m_hash = stl::move(other.m_hash);
                 this->m_key_equal = stl::move(other.m_key_equal);
                 this->m_alloc = stl::move(other.m_alloc);
+
+                other.m_size = other.m_capacity = 0;
+                other.m_table = nullptr;
             }
 
             return *this;
@@ -493,13 +492,8 @@ namespace stl
             return local_iterator(*(this->m_table + n));
         }
 
-        local_iterator end(size_type n)
-        {
-            if (n >= this->m_capacity)
-                throw std::out_of_range("Index out of bounds!\n");
-
-            return local_iterator(*(this->m_table + n));
-        }
+        local_iterator end(size_type)
+        { return local_iterator(nullptr); }
 
         const_local_iterator cbegin(size_type n) const
         {
@@ -550,9 +544,6 @@ namespace stl
         pair<iterator, bool> m_insert(Args&&... args);
 
         template <typename... Args>
-        iterator m_insert(const_iterator hint, Args&&... args);
-        
-        template <typename... Args>
         pair<iterator, bool> m_try_emplace(const key_type& key, Args&&... args);
 
         template <typename... Args>
@@ -561,5 +552,3 @@ namespace stl
 }
 
 #include "unordered_map.tcc"
-
-#endif // HASH_MAP_H    

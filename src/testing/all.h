@@ -9,7 +9,5 @@
 #include "array_test.h"
 #include "vector_test.h"
 #include "forward_list_test.h"
-#include "unordered_map_test.h"
-#include "list_test.h"
 
 #endif

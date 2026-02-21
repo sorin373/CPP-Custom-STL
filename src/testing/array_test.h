@@ -1,5 +1,4 @@
-#ifndef __ARRAY_TEST_H__
-#define __ARRAY_TEST_H__
+#pragma once
 
 #include "../STL/containers/array/array.h"
 
@@ -270,5 +269,3 @@ private:
 
     constexpr static unsigned int N = 15;
 };
-
-#endif // ARRAY_TEST_H

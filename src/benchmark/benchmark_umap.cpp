@@ -86,12 +86,14 @@ int main()
 
     bench_ms("std::unordered_map<int,Big> insert (reserve)", [&]{
         std::unordered_map<int, Big> m;
-        m.reserve(N); // tries to avoid rehashing during inserts
+        m.reserve(N);
+        
         std::uint64_t x = 123456789ULL;
         for (std::size_t i = 0; i < N; ++i) {
             int k = (int)(lcg_next(x) & 0x7fffffff);
             m.insert({k, Big(k)});
         }
+        
         touch_map(m);
     });
 
@@ -189,6 +191,7 @@ int main()
 
         std::uint64_t x = 222222222ULL;
         std::uint64_t acc = 0;
+
         for (std::size_t i = 0; i < Q; ++i) 
         {
             int k = (int)(N + (lcg_next(x) % N));
@@ -200,7 +203,7 @@ int main()
 
     bench_ms("stl::unordered_map<int,Big> find MISS", [&]{
         stl::unordered_map<int, Big> m;
-        m.rehash(N);
+        m.reserve(N);
         for (int i = 0; i < (int)N; ++i) m.insert({i, Big(i)});
 
         std::uint64_t x = 222222222ULL;
@@ -233,7 +236,7 @@ int main()
 
     bench_ms("stl::unordered_map<int,Big> erase by key", [&]{
         stl::unordered_map<int, Big> m;
-        m.rehash(N);
+        m.reserve(N);
         for (int i = 0; i < (int)N; ++i) m.insert({i, Big(i)});
 
         std::uint64_t x = 333333333ULL;

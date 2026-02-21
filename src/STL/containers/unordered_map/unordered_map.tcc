@@ -184,8 +184,6 @@ namespace stl
     void unordered_map<Key, T, Hash, KeyEqual, Allocator>::rehash(size_type new_size)
     {
         size_type old_cap = this->m_capacity;
-        this->m_capacity = new_size;
-
         pointer* temp = this->m_get_table(new_size);
 
         for (size_type i = 0; i < new_size; ++i)
@@ -207,6 +205,8 @@ namespace stl
         }
         
         this->m_deallocate_table();
+
+        this->m_capacity = new_size;
         this->m_table = temp;
     }
 
@@ -226,7 +226,10 @@ namespace stl
                 else
                     prev->m_next = entry->m_next;
                 
-                return node_type(entry);
+                entry->m_next = nullptr;
+                --this->m_size;
+                
+                return node_type(entry, this->m_alloc);
             }
 
             prev = entry;
@@ -280,7 +283,7 @@ namespace stl
     {
         pointer __new_node = this->m_alloc.allocate(1);
 
-        new (&__new_node->m_pair) stl::pair<key_type, mapped_type>(stl::forward<key_type>(key), stl::forward<mapped_type>(value));
+        new (__new_node) stl::pair_node<key_type, mapped_type>(stl::forward<key_type>(key), stl::forward<mapped_type>(value));
         __new_node->m_next = nullptr;
 
         return __new_node;
@@ -386,10 +389,6 @@ namespace stl
 
             return {iterator(this->m_table, this->m_table + this->m_capacity, entry), true};
         }
-        else
-            // if entry is not null that means the prev while was terminated when the same key was found.
-            // Therefore the value is just updated for this specific key
-            entry->m_pair.second = value;
 
         return {iterator(this->m_table, this->m_table + this->m_capacity, entry), false};
     }

@@ -1,31 +1,3 @@
-/**
- * @copyright MIT License
-
-    Copyright (c) 2024 Sorin Tudose
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    @file  unordered_map.h
-
-    @brief This is part of the standard template libraries (STL) and it is used to implement an unordered map.
- */
-
 #pragma once
 
 #include "../../iterator.h"
@@ -153,7 +125,7 @@ namespace stl
         ~unordered_map()
         { this->m_destroy_table(); }
 
-        unordered_map& operator=(const unordered_map& other) noexcept
+        unordered_map& operator=(const unordered_map& other)
         {
             if (this != &other)
             {
@@ -206,13 +178,16 @@ namespace stl
                 if (this->m_size > 0)
                     this->clear();
 
-                this->m_check_rehash(ilist.size(), this->m_capacity, this->m_load_factor);
+                this->m_deallocate_table();
+                this->m_table = nullptr;
             }
 
-            this->m_table = nullptr;
-            this->m_size = 0;
             this->m_capacity = __DEFAULT_BUCKET_SIZE;
             this->m_load_factor = __DEFAULT_LOAD_FACTOR;
+
+            while (this->m_capacity * this->m_load_factor < ilist.size())
+                this->m_capacity *= 2;
+
             this->m_range_initialize(ilist.begin(), ilist.end(), this->m_capacity);
 
             return *this;
@@ -243,7 +218,7 @@ namespace stl
         pair<iterator, bool> insert(const_reference node)
         { return this->m_insert(node.m_pair.first, node.m_pair.second); }
 
-        pair<iterator, bool> insert(const key_type key, const value_type value)
+        pair<iterator, bool> insert(const key_type &key, const value_type value)
         { return this->m_insert(key, value); }
 
         pair<iterator, bool> insert(value_type&& node)
@@ -347,7 +322,7 @@ namespace stl
             this->rehash(new_cap);
         }
 
-        iterator find(const key_type key)
+        iterator find(const key_type& key)
         {
             pointer entry = this->m_table[this->hash(key)];
 
@@ -362,7 +337,7 @@ namespace stl
             return this->end();
         }
 
-        const_iterator find(const key_type key) const
+        const_iterator find(const key_type& key) const
         {
             pointer entry = this->m_table[this->hash(key)];
 
@@ -377,7 +352,7 @@ namespace stl
             return this->cend();
         }
 
-        bool contains(const key_type key)
+        bool contains(const key_type& key)
         {
             pointer entry = this->m_table[this->hash(key)];
 
@@ -408,10 +383,10 @@ namespace stl
             return count;
         }
 
-        size_type bucket(const key_type key) const
+        size_type bucket(const key_type& key) const
         { return this->hash(key); }
 
-        mapped_type& at(const key_type key)
+        mapped_type& at(const key_type& key)
         {
             iterator it = this->find(key);
 
@@ -520,7 +495,7 @@ namespace stl
         key_equal       m_key_equal;
         allocator_type  m_alloc;
 
-        size_type hash(const key_type key)
+        size_type hash(const key_type& key)
         { return static_cast<size_type>(this->m_hash(key) % this->m_capacity); }
 
         pointer* m_get_table(const size_type bucket_count);

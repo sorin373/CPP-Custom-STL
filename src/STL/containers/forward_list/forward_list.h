@@ -5,6 +5,7 @@
 #include "../../iterator.h"
 #include "../../traits/allocator_traits.h"
 #include "../../../cUtility/stl_function.h"
+#include "../../algorithm/algorithm.h"
 
 #include <initializer_list>
 
@@ -95,7 +96,7 @@ namespace stl
 
         reference operator*() const noexcept { return *static_cast<Node*>(this->m_node)->get_m_data(); }
 
-        pointer operator->() const noexcept { return &(static_cast<Node*>(this->m_node)->cget_m_data()); }
+        pointer operator->() const noexcept { return static_cast<Node*>(this->m_node)->get_m_data(); }
 
         Self& operator++() noexcept
         {

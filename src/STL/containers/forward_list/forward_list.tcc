@@ -361,7 +361,7 @@ namespace stl
     template <typename... Args>
     typename forward_list<T, Allocator>::iterator forward_list<T, Allocator>::m_insert_after(const_iterator pos, Args&&... args)
     {
-        Node* current = const_cast<Node*>(pos->m_node);
+        Node* current = const_cast<Node*>(pos.m_node);
         Node* new_node = this->m_create_node(stl::forward<Args>(args)...);
 
         new_node->m_next = current->m_next;

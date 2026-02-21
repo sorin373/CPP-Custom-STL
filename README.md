@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)
 ![Build](https://img.shields.io/badge/Build-CMake-orange.svg?style=flat&logo=cmake)
 
-**A high-performance C++17 reimplementation of selected Standard Template Library (STL) containers.**
+**A C++17 reimplementation of selected Standard Template Library (STL) containers.**
 
 This project is a systems-level exploration of container internals, allocator-aware design, explicit memory safety, and performance behavior. It prioritizes **correctness**, **explicit lifetime management**, and **measurable performance** over full ISO standard conformance.
 
@@ -39,7 +39,7 @@ All containers are templated with a clear separation between interface (`.h`) an
 ## ⚙️ Design Philosophy
 
 ### 1. Allocator Awareness
-We utilize `std::allocator_traits` for all dynamic memory operations to ensure:
+I utilize `allocator_traits` for all dynamic memory operations to ensure:
 * Proper node allocation and bucket array management.
 * Preservation of allocator state during node extraction.
 * Correct object construction/destruction via rebind.

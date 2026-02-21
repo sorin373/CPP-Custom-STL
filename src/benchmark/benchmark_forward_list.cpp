@@ -5,9 +5,12 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
+#include <fstream>
 
 using clock_type = std::chrono::steady_clock;
 static volatile std::uint64_t sink = 0;
+
+std::ofstream fout("data.out");
 
 struct Big {
     int a[16];
@@ -32,6 +35,8 @@ long long bench_ms(const char* name, F&& f, int warmup = 1, int iters = 5)
     }
 
     std::cout << name << ": " << best << " ms\n";
+    fout << name << ": " << best << " ms\n";
+
     return best;
 }
 
@@ -246,6 +251,8 @@ int main()
     });
 
     std::cout << "\nDone. sink=" << sink << "\n";
+
+    fout.close();
 
     return 0;
 }

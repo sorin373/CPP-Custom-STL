@@ -1,5 +1,3 @@
-# CPP-CUSTOM-STL
-
 ![C++ Standard](https://img.shields.io/badge/Standard-C%2B%2B17-blue.svg?style=flat&logo=c%2B%2B)
 ![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)
 ![Build](https://img.shields.io/badge/Build-CMake-orange.svg?style=flat&logo=cmake)

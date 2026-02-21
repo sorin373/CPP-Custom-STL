@@ -1,26 +1,23 @@
-cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-project(stl VERSION 1.0.0)
+cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+project(stl VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED true)
-
-if(NOT CMAKE_CXX_COMPILE_FEATURES)
-    message(FATAL_ERROR "The compiler does not support C++17.")
-endif()
-
-if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-  message(
-    FATAL_ERROR
-      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+    message(FATAL_ERROR
+        "In-source builds are not allowed.\n"
+        "Please run: cmake -S . -B build"
     )
 endif()
 
-add_executable(
-  ${PROJECT_NAME}
-  # testing/test.cpp
-  # benchmark/benchmark_vector.cpp
-  # benchmark/benchmark_umap.cpp
-   benchmark/benchmark_forward_list.cpp
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_executable(${PROJECT_NAME}
+    # testing/test.cpp
+    # benchmark/benchmark_vector.cpp
+    # benchmark/benchmark_umap.cpp
+    benchmark/benchmark_forward_list.cpp
 )

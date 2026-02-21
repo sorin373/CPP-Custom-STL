@@ -1,241 +1,121 @@
 # CPP-CUSTOM-STL
 
-A C++17 reimplementation of selected Standard Template Library (STL) containers, developed as a systems-level exploration of container internals, allocator-aware design, memory safety, and performance behavior.
+![C++ Standard](https://img.shields.io/badge/Standard-C%2B%2B17-blue.svg?style=flat&logo=c%2B%2B)
+![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat)
+![Build](https://img.shields.io/badge/Build-CMake-orange.svg?style=flat&logo=cmake)
 
-This project focuses on correctness, explicit lifetime management, and measurable performance characteristics rather than full standard conformance.
+**A high-performance C++17 reimplementation of selected Standard Template Library (STL) containers.**
 
----
-
-# Motivation
-
-The C++ Standard Library provides high-performance, production-grade containers.  
-However, its internal mechanisms remain opaque.
-
-This project was developed to:
-
-- Understand allocator-aware container architecture
-- Implement iterator and ownership semantics from scratch
-- Explore load factor and hashing behavior
-- Study memory layout and cache implications
-- Benchmark against `std` implementations
-- Detect and eliminate undefined behavior using sanitizers
-
-The goal is not replacement, but reconstruction for deep technical understanding.
+This project is a systems-level exploration of container internals, allocator-aware design, explicit memory safety, and performance behavior. It prioritizes **correctness**, **explicit lifetime management**, and **measurable performance** over full ISO standard conformance.
 
 ---
 
-# Implemented Containers
+## 🎯 Motivation
 
-- `vector`
-- `unordered_map`
-- `forward_list`
-- `array`
+The C++ Standard Library provides production-grade containers, but its internal mechanisms are often opaque. This project reconstructs them to achieve deep technical understanding in the following areas:
 
-All containers are templated and implemented with clear separation between interface (`.h`) and implementation (`.tcc`).
+* **Architecture:** Understanding allocator-aware container design.
+* **Memory:** Implementing manual iterator and ownership semantics.
+* **Performance:** Exploring load factors, hashing behavior, and cache implications.
+* **Safety:** Detecting and eliminating undefined behavior using sanitizers.
+
+> **Goal:** Not replacement, but reconstruction for educational and analytical purposes.
 
 ---
 
-# Design Philosophy
+## 📦 Implemented Containers
 
-## 1. Allocator Awareness
+All containers are templated with a clear separation between interface (`.h`) and implementation (`.tcc`).
 
-All dynamic containers use `std::allocator_traits` and proper rebinding to:
+| Container | Type | Key Features |
+| :--- | :--- | :--- |
+| **`vector`** | Dynamic Array | Manual growth strategy, move-aware reallocation. |
+| **`unordered_map`** | Hash Map | Separate chaining, configurable load factor. |
+| **`forward_list`** | Singly Linked List | Memory efficient, O(1) insertion/removal. |
+| **`array`** | Static Array | Stack-allocated fixed-size buffer. |
 
-- Allocate nodes
-- Allocate bucket arrays (`unordered_map`)
-- Construct and destroy objects correctly
-- Preserve allocator state in node extraction
+---
 
-## 2. Explicit Object Lifetime Management
+## ⚙️ Design Philosophy
 
-Objects are:
+### 1. Allocator Awareness
+We utilize `std::allocator_traits` for all dynamic memory operations to ensure:
+* Proper node allocation and bucket array management.
+* Preservation of allocator state during node extraction.
+* Correct object construction/destruction via rebind.
 
-- Constructed using placement new or allocator_traits::construct
-- Destroyed explicitly via allocator_traits::destroy
-- Deallocated using matching allocator state
+### 2. Explicit Lifetime Management
+No reliance on implicit behavior. Objects are:
+* Constructed via placement new or `allocator_traits::construct`.
+* Destroyed explicitly via `allocator_traits::destroy`.
+* Deallocated using matching allocator states.
 
-No reliance on implicit behavior.
+### 3. Safety & Ownership
+* **Ownership:** Each container strictly owns its storage.
+* **Hygiene:** Guarantees destruction of elements; avoids double frees and dangling pointers.
+* **States:** Defines valid "moved-from" states.
 
-## 3. Clear Ownership Model
+### 4. Controlled Growth
+* **`unordered_map`:** Explicit `rehash()`/`reserve()` logic prevents element corruption during bucket redistribution.
+* **`vector`:** Capacity is preserved unless explicitly modified; growth strategy is manual and move-aware.
 
-Each container:
+---
 
-- Owns its storage
-- Guarantees destruction of contained elements
-- Defines valid moved-from states
-- Avoids double frees and dangling pointers
-
-## 4. Controlled Rehashing and Growth
-
-`unordered_map`:
-
-- Uses separate chaining
-- Configurable load factor
-- Explicit `rehash()` and `reserve()` logic
-- Bucket redistribution without element corruption
-
-`vector`:
-
-- Manual growth strategy
-- Move-aware reallocation
-- Capacity preserved unless explicitly modified
-
-## 5. Benchmark-Driven Validation
+## 📊 Benchmark Results
 
 Performance was measured against `std` implementations under identical conditions.
+* **N** = 200,000 (Elements)
+* **Q** = 20,000 (Queries)
+* **E** = 100,000 (Erasures)
 
-Sanitizers were used to validate absence of memory errors and undefined behavior.
+### 1. Vector Performance
+
+| Operation | `std::vector` | `stl::vector` | Delta |
+| :--- | :--- | :--- | :--- |
+| **push_back copy** (no reserve) | 61 ms | **47 ms** |  -14ms |
+| **push_back copy** (reserve) | 24 ms | **23 ms** | -1ms |
+| **push_back move** (reserve) | 32 ms | **25 ms** | -7ms |
+| **emplace_back** (reserve) | 27 ms | **21 ms** |  -6ms |
+| **resize** (grow + shrink) | **8 ms** | 11 ms | +3ms |
+| **clear + refill** | 20 ms | 20 ms | = |
+| **insert middle** | **182 ms** | 404 ms | +222ms |
+| **erase middle** | 186 ms | **152 ms** |  -34ms |
+
+> **Analysis:** Append-heavy workloads perform competitively or faster than `std`. Middle insertion remains the most expensive operation due to element shifting costs.
+
+### 2. Unordered Map Performance
+
+| Operation | `std::unordered_map` | `stl::unordered_map` | Delta |
+| :--- | :--- | :--- | :--- |
+| **insert** (no reserve) | **407 ms** | 477 ms | +70ms |
+| **insert** (reserve) | **305 ms** | 358 ms | +53ms |
+| **operator[] insert** | **305 ms** | 370 ms | +65ms |
+| **find HIT** | 218 ms | **197 ms** |  -21ms |
+| **find MISS** | 271 ms | **186 ms** |  -85ms |
+| **erase by key** | 192 ms | **154 ms** |  -38ms |
+
+> **Analysis:** While insertion is slightly slower, lookup (especially miss cases) and erase operations outperform the standard implementation, indicating efficient bucket traversal and node unlinking.
+
+### 3. Forward List Performance
+
+| Operation | `std::forward_list` | `stl::forward_list` |
+| :--- | :--- | :--- |
+| **push_front** | 24 ms | 24 ms |
+| **insert_after** | 24 ms | 25 ms |
+| **iterate / sum** | 29 ms | 30 ms |
+| **linear_find** (HIT) | 19.9 s | 20.7 s |
+| **linear_find** (MISS) | 45.4 s | 47.2 s |
+
+> **Analysis:** Core operations match `std` behavior closely. Linear search overhead aligns with expected O(n) traversal costs.
 
 ---
 
-# Build System
+## 🛠 Build System
 
-Modern CMake configuration with:
+The project uses modern CMake (3.16+) with out-of-source build enforcement.
 
-- Out-of-source build enforcement
-- Optional test targets
-- Optional benchmark targets
-- Optional ASAN / UBSAN integration
-
-## Basic Build
+### Basic Build
 
 ```bash
 cmake -S . -B build
 cmake --build build
-```
-
-## Enable Tests
-
-```bash
-cmake -S . -B build -DSTL_BUILD_TESTS=ON
-cmake --build build
-ctest --test-dir build
-```
-
-## Enable Sanitizers
-
-```bash
-cmake -S . -B build -DSTL_ENABLE_ASAN=ON -DSTL_ENABLE_UBSAN=ON
-cmake --build build
-```
-
----
-
-# Benchmark Results
-
-Test Parameters:
-
-```
-N = 200000
-Q = 20000
-E = 100000
-```
-
-All benchmarks compiled with identical compiler flags and executed in the same environment.
-
----
-
-| Operation                              | std::vector | stl::vector |
-|----------------------------------------|------------|------------|
-| push_back copy (no reserve)           | 61 ms      | 47 ms      |
-| push_back copy (reserve)              | 24 ms      | 23 ms      |
-| push_back move (reserve)              | 32 ms      | 25 ms      |
-| emplace_back (reserve)                | 27 ms      | 21 ms      |
-| resize grow + shrink                  | 8 ms       | 11 ms      |
-| clear + refill                        | 20 ms      | 20 ms      |
-| insert middle                         | 182 ms     | 404 ms     |
-| erase middle                          | 186 ms     | 152 ms     |
-
-### Analysis
-
-Append-heavy workloads perform competitively or faster than `std`.  
-Middle insertion remains the most expensive operation due to element shifting cost.
-
----
-
-| Operation                        | std::unordered_map | stl::unordered_map |
-|----------------------------------|-------------------|-------------------|
-| insert (no reserve)             | 407 ms            | 477 ms            |
-| insert (reserve)                | 305 ms            | 358 ms            |
-| operator[] insert               | 305 ms            | 370 ms            |
-| find HIT                        | 218 ms            | 197 ms            |
-| find MISS                       | 271 ms            | 186 ms            |
-| erase by key                    | 192 ms            | 154 ms            |
-
-### Analysis
-
-Insertion is slower than `std`, but lookup (especially miss cases) and erase operations outperform the standard implementation in this workload.
-
-This indicates efficient bucket traversal and node unlinking.
-
----
-
-| Operation                     | std::forward_list | stl::forward_list |
-|-------------------------------|------------------|------------------|
-| push_front                   | 24 ms            | 24 ms            |
-| insert_after (before_begin)  | 24 ms            | 25 ms            |
-| iterate / sum                | 29 ms            | 30 ms            |
-| linear_find HIT              | 19962 ms         | 20761 ms         |
-| linear_find MISS             | 45437 ms         | 47227 ms         |
-| pop_front (E times)          | 22 ms            | 23 ms            |
-
-### Analysis
-
-Core operations match `std` behavior closely.  
-Linear search overhead aligns with expected O(n) traversal cost.
-
----
-
-# Example Usage
-
-```cpp
-#include "unordered_map.h"
-
-int main() {
-    stl::unordered_map<int, int> map;
-
-    map.insert({1, 42});
-    map.insert({2, 84});
-
-    if (map.contains(1)) {
-        return map.at(1);
-    }
-}
-```
-
----
-
-# Technical Highlights
-
-- Manual rehash implementation with correct bucket redistribution
-- Single-pass insertion without double lookup
-- Proper node extraction preserving allocator state
-- Iterator and const_iterator support
-- Explicit move constructor and move assignment handling
-- Verified under AddressSanitizer and UndefinedBehaviorSanitizer
-
----
-
-# Scope
-
-This project prioritizes:
-
-- Clarity of design
-- Correct memory management
-- Measurable performance
-- Systems-level understanding
-
-It does not aim for full ISO standard compliance.
-
----
-
-# Requirements
-
-- CMake 3.16+
-- C++17 compatible compiler (GCC / Clang / MSVC)
-
----
-
-# License
-
-MIT License
